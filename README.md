@@ -4,8 +4,8 @@ A structured Python prototype that evaluates whether driving to Samnaun for refu
 
 ## What the app does
 
-- Uses route distance (mock service) for a start location
-- Uses user-provided fuel prices (home vs. Samnaun)
+- Uses live route distance for a start location (Google Distance Matrix if API key is set, otherwise OSRM), with fallback map distances
+- Uses manual fuel prices or auto-resolved prices with source tracking
 - Calculates trip fuel, trip cost, gross savings, net savings, and break-even distance
 - Returns a clear recommendation and explanation via FastAPI
 
@@ -23,24 +23,29 @@ This Project was developed using an AI-Driven Development (AIDD) approach, where
 
 - Prompt 1 (original specification): `copilot_prompt.md`
 - Prompt 2 (Extension incl. GUI and README-hint): `02-prompt.md`
+- Prompt 3 (Live API and favicon extension): `03-prompt.md`
 
 ## Project Structure
 
 ```text
-samnaun-fuel-checker/
+fuel-samnaun-calculator/
 ├── app/
 │   ├── main.py
 │   ├── calculator.py
 │   ├── models.py
+│   ├── static/
 │   └── services/
 │       ├── fuel_api.py
 │       └── distance_api.py
 ├── tests/
-│   └── test_calculator.py
+│   ├── test_calculator.py
+│   └── test_fuel_api.py
+├── favicon.ico
 ├── README.md
 ├── PRD.md
+├── 01-prompt.md
 ├── 02-prompt.md
-├── copilot_prompt.md
+├── 03-prompt.md
 └── requirements.txt
 ```
 
@@ -98,6 +103,20 @@ Example response:
 
 ## Notes
 
-- The current distance service is a mock map-based implementation.
-- The fuel API service contains both a simulated price source and a placeholder for real API integration.
+- Distance source priority: Google Distance Matrix (if `GOOGLE_MAPS_API_KEY` is set) -> OSRM open routing -> internal fallback map.
+- Home fuel source priority:
+  - Manual input if provided
+  - If `start_location` is `Zams`: E-Control nearest ENI station near Zams
+  - Otherwise: E-Control nearest station around geocoded start location
+  - Fallback simulation if no live result is available
+- Samnaun BP source priority:
+  - Manual input if provided
+  - Optional custom endpoint via `SAMNAUN_BP_PRICE_API_URL`
+  - Fallback simulation
+- Why Samnaun stays configurable: no guaranteed open, official, unlimited public API endpoint for the exact BP Samnaun price is integrated by default.
 - A browser GUI is available on the root endpoint `/` to enter values and inspect results visually.
+
+## Optional Environment Variables
+
+- `GOOGLE_MAPS_API_KEY`: enables Google Distance Matrix routing.
+- `SAMNAUN_BP_PRICE_API_URL`: optional JSON endpoint for live Samnaun BP price.

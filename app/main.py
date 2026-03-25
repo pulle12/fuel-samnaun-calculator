@@ -1,24 +1,35 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 
 from app.calculator import evaluate_trip
 from app.models import CalculationRequest, CalculationResponse
 from app.services.distance_api import get_route_info
+from app.services.fuel_api import resolve_fuel_prices
 
 app = FastAPI(title="Samnaun Fuel Checker", version="0.1.0")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "favicon.ico")
 
 
 @app.get("/", response_class=HTMLResponse)
 def home() -> str:
-        return """
+    return """
 <!doctype html>
 <html lang="de">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Samnaun Fuel Checker</title>
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <style>
         :root {
             --bg-1: #f4efe6;
@@ -220,13 +231,13 @@ def home() -> str:
                     </div>
 
                     <div class="field">
-                        <label for="fuel_price_home">Preis zuhause (EUR/L)</label>
-                        <input id="fuel_price_home" name="fuel_price_home" type="number" step="0.001" min="0.1" value="1.68" required />
+                        <label for="fuel_price_home">Preis zuhause (EUR/L, optional)</label>
+                        <input id="fuel_price_home" name="fuel_price_home" type="number" step="0.001" min="0.1" placeholder="automatisch ermitteln" />
                     </div>
 
                     <div class="field">
-                        <label for="fuel_price_samnaun">Preis Samnaun (EUR/L)</label>
-                        <input id="fuel_price_samnaun" name="fuel_price_samnaun" type="number" step="0.001" min="0.1" value="1.34" required />
+                        <label for="fuel_price_samnaun">Preis Samnaun (EUR/L, optional)</label>
+                        <input id="fuel_price_samnaun" name="fuel_price_samnaun" type="number" step="0.001" min="0.1" placeholder="automatisch ermitteln" />
                     </div>
 
                     <div class="field">
@@ -235,7 +246,7 @@ def home() -> str:
                     </div>
 
                     <button type="submit">Berechnung starten</button>
-                    <p class="hint">Tipp: Bei unbekanntem Ort nutzt der Prototyp standardmaessig 120 km Hin- und Rueckfahrt.</p>
+                    <p class="hint">Tipp: Leere Preisfelder nutzen Live-/Fallback-Preise. Bei Ort Zams wird fuer zuhause bevorzugt ENI Zams verwendet.</p>
                 </form>
             </div>
 
@@ -279,8 +290,8 @@ def home() -> str:
                 start_location: form.start_location.value,
                 consumption: Number(form.consumption.value),
                 tank_size: Number(form.tank_size.value),
-                fuel_price_home: Number(form.fuel_price_home.value),
-                fuel_price_samnaun: Number(form.fuel_price_samnaun.value),
+                fuel_price_home: form.fuel_price_home.value ? Number(form.fuel_price_home.value) : null,
+                fuel_price_samnaun: form.fuel_price_samnaun.value ? Number(form.fuel_price_samnaun.value) : null,
                 time_cost_per_hour: Number(form.time_cost_per_hour.value || 0),
             };
 
@@ -314,21 +325,33 @@ def home() -> str:
 @app.post("/calculate", response_model=CalculationResponse)
 def calculate(request: CalculationRequest) -> CalculationResponse:
     route = get_route_info(request.start_location)
+    prices = resolve_fuel_prices(
+        start_location=request.start_location,
+        manual_home_price=request.fuel_price_home,
+        manual_samnaun_price=request.fuel_price_samnaun,
+    )
+
     result = evaluate_trip(
         round_trip_distance_km=route.round_trip_distance_km,
         consumption_l_per_100km=request.consumption,
         tank_size_liters=request.tank_size,
-        fuel_price_home=request.fuel_price_home,
-        fuel_price_samnaun=request.fuel_price_samnaun,
+        fuel_price_home=prices.fuel_price_home,
+        fuel_price_samnaun=prices.fuel_price_samnaun,
         time_cost_per_hour=request.time_cost_per_hour,
         travel_time_hours=route.travel_time_hours,
         average_speed_kmh=route.average_speed_kmh,
     )
 
+    explanation_with_sources = (
+        f"{result.explanation} "
+        f"Price sources: home={prices.home_source}, samnaun={prices.samnaun_source}. "
+        f"Route source: {route.route_source}."
+    )
+
     return CalculationResponse(
         worth_it=result.worth_it,
         net_savings=result.net_savings,
-        explanation=result.explanation,
+        explanation=explanation_with_sources,
         round_trip_distance_km=result.round_trip_distance_km,
         trip_fuel_liters=result.trip_fuel_liters,
         trip_fuel_cost=result.trip_fuel_cost,
