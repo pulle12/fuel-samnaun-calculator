@@ -1,162 +1,160 @@
-# AIDD-Dokumentation: Vorgehen, Tech-Stack, Datenquellen und Verarbeitung
+# AIDD-Dokumentation: Samnaun Fuel Checker
 
-## 1. Ziel dieser Dokumentation
-Diese Datei beschreibt, wie das Projekt mit AIDD (AI-Driven Development) aufgebaut wurde, welche Technologien eingesetzt sind, woher die Daten kommen und wie sie im System verarbeitet werden.
+## 1. Ziel und Kontext
+Diese Datei dokumentiert den aktuellen Stand des Projekts aus AIDD-Sicht (AI-Driven Development):
+- welche Anforderungen iterativ entstanden sind,
+- welche Technologien und Datenquellen genutzt werden,
+- wie Daten verarbeitet werden,
+- welche Quality-Checks und Regression-Fixes eingebaut wurden.
 
-## 2. Was bedeutet AIDD in diesem Projekt?
-AIDD bedeutet hier: Die Entwicklung erfolgte iterativ über klar abgegrenzte Prompts, die jeweils neue Anforderungen eingefuehrt haben.
+## 2. AIDD-Workflow im Projekt
+Das Projekt wurde in mehreren Prompt-Iterationen erweitert. Jede Iteration hat entweder neue Features, bessere Datenqualitaet oder bessere Transparenz eingefuehrt.
 
-Eingesetzte Prompt-Dateien im Projekt:
-- `prompts/01-prompt.md`: Urspruengliche Produktanforderung und Grundstruktur
-- `prompts/02-prompt.md`: GUI-Erweiterung und README-Hinweise
-- `prompts/03-prompt.md`: Genauere Live-Datenanforderungen (Distanzen, Preise, Favicon)
-- `prompts/04-prompt.md`: Wunsch nach umfassender technischer Erklaerung
-- `prompts/05-prompt.md` bis `prompts/11-prompt.md`: weitere iterative Erweiterungen und Qualitaetsanpassungen
+Prompt-Archiv:
+- [prompts/01-prompt.md](prompts/01-prompt.md)
+- [prompts/02-prompt.md](prompts/02-prompt.md)
+- [prompts/03-prompt.md](prompts/03-prompt.md)
+- [prompts/04-prompt.md](prompts/04-prompt.md)
+- [prompts/05-prompt.md](prompts/05-prompt.md)
+- [prompts/06-prompt.md](prompts/06-prompt.md)
+- [prompts/07-prompt.md](prompts/07-prompt.md)
+- [prompts/08-prompt.md](prompts/08-prompt.md)
+- [prompts/09-prompt.md](prompts/09-prompt.md)
+- [prompts/10-prompt.md](prompts/10-prompt.md)
+- [prompts/11-prompt.md](prompts/11-prompt.md)
+- [prompts/12-prompt.md](prompts/12-prompt.md)
+- [prompts/13-prompt.md](prompts/13-prompt.md)
 
-Begleitende Spezifikationen:
-- `PRD.md`: Produktanforderungen (Problem, Nutzer, MVP, Metriken)
+Begleitdokumente:
+- [PRD.md](PRD.md)
+- [README.md](README.md)
 
-## 3. Entwicklungsprozess (AIDD-Workflow)
-1. Anforderungen in Prompt-Form erfassen.
-2. Projektstruktur erzeugen und lauffaehigen Prototyp liefern.
-3. Business-Logik testbar halten (separate Calculator-Funktionen).
-4. API und GUI schrittweise aufbauen.
-5. Externe Datenquellen iterativ integrieren (mit klaren Fallbacks).
-6. Tests erweitern, bis alle zentralen Rechenpfade abgesichert sind.
-7. Dokumentation fortlaufend nachziehen.
+## 3. Eingesetzte Technologien
 
-## 4. Eingesetzter Tech-Stack
-
-### 4.1 Sprache und Runtime
+### 3.1 Backend und API
 - Python 3.11+
+- FastAPI fuer API und UI-Auslieferung
+- Pydantic fuer Request/Response-Validierung
+- requests fuer externe HTTP-Quellen
 
-### 4.2 Backend
-- FastAPI: HTTP-API und Browser-UI-Auslieferung
-- Pydantic: Request/Response-Validierung
-- requests: Aufrufe externer Web-APIs
+### 3.2 Tests und Qualitaet
+- pytest fuer Unit- und Service-Tests
+- Fokus auf deterministische Kernlogik in [app/calculator.py](app/calculator.py)
+- Regressionstests fuer Datenquellen-/Parser-Probleme in [tests/test_fuel_api.py](tests/test_fuel_api.py)
 
-### 4.3 Testen
-- pytest: Unit-Tests fuer Rechenlogik und Preisauflosung
+### 3.3 Laufzeit
+- uvicorn als ASGI-Server
 
-### 4.4 Ausfuehrung
-- uvicorn: ASGI-Server fuer lokale Entwicklung (`uvicorn app.main:app --reload`)
+## 4. Architektur und Verantwortlichkeiten
 
-## 5. Architektur und Verantwortlichkeiten
+### 4.1 Kernlogik
+- [app/calculator.py](app/calculator.py): reine Berechnungslogik (trip cost, gross/net savings, break-even)
 
-### 5.1 `app/calculator.py`
-- Reine Business-Logik
-- Deterministische Berechnungen ohne Framework-Abhaengigkeit
-- Kernkennzahlen:
-  - Round-trip Distanz
-  - Trip Fuel (Liter)
-  - Trip Fuel Cost
-  - Bruttoersparnis
-  - Nettoersparnis
-  - Break-even Distanz
+### 4.2 Datenmodelle
+- [app/models.py](app/models.py): Eingabe-/Ausgabe-Schemas inkl. fuel_type (`diesel`, `benzin95`, `benzin98`)
 
-### 5.2 `app/services/distance_api.py`
-- Ermittelt Streckendaten zur SOCAR Samnaun
-- Quelle-Prioritaet:
-  1. Google Distance Matrix (wenn `GOOGLE_MAPS_API_KEY` gesetzt)
-  2. OSRM (offener Routing-Dienst)
-  3. Interner Fallback aus statischer Distanzmap
-- Geocoding ueber Nominatim (Startort -> Koordinaten)
-- Liefert auch `route_source` zur Transparenz
+### 4.3 Distanz-Service
+- [app/services/distance_api.py](app/services/distance_api.py): Route-Informationen
+- Prioritaet:
+1. Google Distance Matrix (optional via API Key)
+2. OSRM
+3. interner Fallback
 
-### 5.3 `app/services/fuel_api.py`
-- Ermittelt Spritpreise fuer Zuhause und Samnaun
-- Home-Preis Prioritaet:
-  1. Manuelle Eingabe
-  2. Bei `start_location = zams`: ENI-Priorisierung via E-Control-Stationen in Zams
-  3. Sonst: naechste Station via E-Control rund um den geocodeten Startort
-  4. Simulierter Fallback
-- Samnaun-Preis Prioritaet:
-  1. Manuelle Eingabe
-  2. Optionaler Endpoint (`SAMNAUN_SOCAR_PRICE_API_URL`, legacy: `SAMNAUN_BP_PRICE_API_URL`)
-  3. Simulierter Fallback
-- Liefert Quellenkennzeichnung (`home_source`, `samnaun_source`)
+### 4.4 Fuel-Service
+- [app/services/fuel_api.py](app/services/fuel_api.py): Preisaufloesung und Quellen-Tracking
 
-### 5.4 `app/main.py`
-- FastAPI-Endpoints:
-  - `GET /`: Browser-GUI
-  - `POST /calculate`: Hauptberechnung
-  - `GET /favicon.ico`: Favicon-Auslieferung
-- Fuehrt Distanz- und Preisservice zusammen und ruft dann die Rechenlogik auf
-- Erweiterte Erklaerung im Ergebnis inkl. Datenquellen
+Home-Preis Prioritaet:
+1. manuelle Eingabe
+2. bei Startort Zams: ENI-Priorisierung via E-Control
+3. sonst naechste E-Control-Station am Startort
+4. Fallback-Werte
 
-### 5.5 `app/models.py`
-- Pydantic-Modelle fuer Input/Output
-- Validierung von Pflichtfeldern und numerischen Grenzen
+Samnaun-Preis Prioritaet:
+1. manuelle Eingabe
+2. Live-Scraping offizieller Betreiberseiten (HTML Parsing)
+3. optionaler konfigurierbarer Endpoint
+4. Fallback-Werte
 
-### 5.6 `tests/`
-- `test_calculator.py`: Rechenfunktionen und Edge Cases
-- `test_fuel_api.py`: Preisauflosung, Prioritaeten und Fallback-Verhalten
+## 5. Datenquellen im Detail
 
-## 6. Datenquellen im Detail
+### 5.1 Distanz
+- Google Distance Matrix (optional)
+- OSRM (offen)
+- interne Distanz-Fallbacks
 
-### 6.1 Distanzdaten
-- Google Distance Matrix API (offiziell, key-basiert)
-- OSRM Public Routing API (offen)
-- Fallback-Map (lokale Distanzwerte)
+### 5.2 Geocoding
+- Nominatim (OSM)
 
-### 6.2 Geocoding
-- Nominatim (OpenStreetMap) fuer Ortsaufloesung in Koordinaten
+### 5.3 Oesterreichische Treibstoffpreise
+- E-Control API
 
-### 6.3 Kraftstoffpreise (AT)
-- E-Control Spritpreis-Endpoint (Stationssuche nach Koordinaten und FuelType)
-- Spezieller Fokus fuer Zams: ENI-Station priorisiert
+### 5.4 Samnaun-Treibstoffpreise (Live)
+Aktuell wird ein Scraping-Mechanismus verwendet, weil keine stabile, frei verfuegbare, offizielle JSON-API fuer genau diese Samnaun-Stationen integriert ist.
 
-### 6.4 Kraftstoffpreise (Samnaun)
-- Priorisiert veroeffentlichte Preisdarstellung der offiziellen Betreiberseiten (Hangl Mobility, dann Interzegg)
-- Optionaler konfigurierbarer Endpoint fuer SOCAR Samnaun
-- Ohne verfuegbare Live-Quelle: simulierter Fallback
+Quellenkette:
+1. Hangl Mobility Seite (primaere Live-Quelle)
+2. Interzegg Tankstellen-Seite (sekundaere Live-Quelle)
+3. optionaler Custom Endpoint (`SAMNAUN_SOCAR_PRICE_API_URL`)
+4. simulierte Fallback-Werte
 
-## 7. Datenverarbeitung: End-to-End Flow
-1. Nutzer gibt Eingaben in GUI oder per API.
-2. `POST /calculate` validiert Request ueber Pydantic.
-3. Distanzservice bestimmt Round-trip Distanz, Zeit und Routenquelle.
-4. Fuelservice bestimmt Home- und Samnaun-Preis inkl. Quellenlabel.
-5. Calculator berechnet Kosten, Ersparnis, Netto und Break-even.
-6. API liefert strukturierte Antwort:
-   - `worth_it` (bool)
-   - `net_savings` (EUR)
-   - `explanation` (inkl. Quellen)
-   - zusaetzliche Kennzahlen fuer Nachvollziehbarkeit
+Wichtiger technischer Punkt:
+- Der Parser in [app/services/fuel_api.py](app/services/fuel_api.py) wurde von label-basiertem Matching auf block-basiertes Matching umgestellt (Diesel -> Super95 -> Super98 mit CHF-Werten), um False-Matches durch i18n/Template-Texte zu vermeiden.
 
-## 8. Warum Fallbacks wichtig sind
-Externe APIs koennen zeitweise nicht verfuegbar sein, Limits haben oder strukturell variieren. Das Projekt ist daher absichtlich resilient gebaut:
-- Wenn Live-Daten fehlen, bleibt die Anwendung mit plausiblen Defaultwerten funktionsfaehig.
-- Die Antwort zeigt Quellen, damit die Entscheidung nachvollziehbar bleibt.
+## 6. UI und Favicon
 
-## 9. Qualitaetssicherung
-- Unit-Tests fuer Rechenkern und Service-Logik
-- Klare Trennung von Business-Logik und Integrationscode
-- Typisierung in allen Kernmodulen
-- Lesbare, wartbare Struktur ohne Overengineering
+### 6.1 Browser-UI
+- Root-Route [app/main.py](app/main.py) liefert eine HTML-UI zur Eingabe und Ergebnisanzeige.
 
-## 10. Relevante Konfiguration
-Optionale Umgebungsvariablen:
-- `GOOGLE_MAPS_API_KEY`: Aktiviert Google-Distanzberechnung
-- `SAMNAUN_SOCAR_PRICE_API_URL`: Optionaler Live-Preisendpoint fuer Samnaun SOCAR
-- `SAMNAUN_BP_PRICE_API_URL`: Legacy-Name, weiterhin unterstuetzt
+### 6.2 Favicon-Strategie
+- Favicon wird ueber [app/main.py](app/main.py) robust ausgeliefert:
+1. bevorzugt aus `app/static/favicon.ico`
+- zusaetzlich ist `/static` gemountet fuer statische Assets.
+- gegen Browser-Cache wurde zusaetzlich ein Cache-Buster (`?v=...`) in den Icon-Links eingebaut.
+- `/favicon.ico` liefert explizite `Cache-Control` Header, damit Updates sichtbar werden.
 
-## 11. Zusammenfassung
-Das System kombiniert AIDD-gestuetzte, iterative Entwicklung mit einer sauberen Python-Architektur. Die Kernberechnung ist deterministisch und testbar, waehrend externe Datenquellen flexibel angebunden sind. Durch Quellen-Priorisierung und Fallbacks bleibt die Anwendung praktisch nutzbar, transparent und robust.
+## 7. End-to-End Datenfluss
+1. User sendet Eingaben ueber UI oder `POST /calculate`.
+2. Pydantic validiert Input.
+3. Distanz-Service bestimmt Strecke/Zeiten + Quelle.
+4. Fuel-Service bestimmt Home/Samnaun-Preis + Quellen.
+5. Calculator ermittelt net savings und Entscheidung `worth_it`.
+6. API antwortet mit Kennzahlen + Erklaerung + Quellenkontext.
 
-## 12. Eigener Beitrag vs AI-Unterstuetzung
-Diese Abgrenzung ist fuer Portfolio-Transparenz bewusst explizit dokumentiert.
+## 8. Quality-Checks und bekannte Fixes
 
-Eigener Beitrag:
-- Problemdefinition, Zielbild und Priorisierung der Anforderungen
-- Prompt-Strategie und Iterationssteuerung (01 bis 04)
-- Auswahl und Bewertung der Datenquellen (offiziell/offen/fallback)
-- Architekturentscheidungen (Separation of Concerns, Fallback-Design, Erklaerbarkeit)
-- Qualitaetskriterien und Testabdeckung als Abnahmegrundlage
+### 8.1 Zams/ENI Regression
+- Problem: ENI-Eintrag vorhanden, aber ohne gueltigen Live-Preis.
+- Fix: naechste gueltige Live-Station in Zams verwenden statt direkt harter Fallback.
+- Absicherung: Test in [tests/test_fuel_api.py](tests/test_fuel_api.py).
+
+### 8.2 Hangl Parser Regression (Benzin 95)
+- Problem: Diesel und 98 wurden gefunden, 95 fiel teilweise auf Fallback.
+- Root Cause: Parser matchte u. a. Template-/Uebersetzungslabels statt den realen Preisblock.
+- Fix: block-basiertes Regex-Matching auf echte Reihenfolge und CHF-Werte.
+- Absicherung: Tests mit Label-Rauschen in [tests/test_fuel_api.py](tests/test_fuel_api.py).
+
+### 8.3 Favicon Sichtbarkeit in Browser-Tab
+- Problem: favicon Datei vorhanden, in der Tab-Leiste aber weiterhin nicht sichtbar.
+- Root Cause: Browser-caching auf `/favicon.ico` zeigte stale Ergebnis.
+- Fix: cache-busting Query-Parameter in HTML plus no-cache Header auf der favicon Route.
+- Ergebnis: Route zeigt korrekt auf `app/static/favicon.ico` und Browser kann aktualisiertes Icon laden.
+
+## 9. Konfiguration
+- `GOOGLE_MAPS_API_KEY`: aktiviert Google-Routing
+- `SAMNAUN_SOCAR_PRICE_API_URL`: optionaler Samnaun-Live-Endpoint
+- `SAMNAUN_BP_PRICE_API_URL`: Legacy-Alias
+
+## 10. Grenzen des aktuellen Ansatzes
+- Externe Websites/APIs koennen Rate Limits oder Struktur-Aenderungen haben.
+- HTML-Scraping hat kein garantiertes API-Vertragsniveau.
+- Deshalb bleibt eine transparente Fallback-Strategie zwingend.
+
+## 11. Beitrag und Transparenz
+Eigener Beitrag (Projektsteuerung):
+- Anforderungen, Priorisierung, Prompt-Iteration
+- Architekturentscheidungen und Fallback-Strategie
+- Validation/Abnahme anhand Tests und nachvollziehbarer Quellenketten
 
 AI-Unterstuetzung:
-- Vorschlaege und Entwurf von Codebausteinen
-- Umsetzung einzelner Iterationsschritte nach Promptvorgaben
-- Entwuerfe fuer technische Dokumentation
-
-Abnahmeprinzip:
-- Änderungen gelten erst als uebernommen, wenn sie inhaltlich geprueft, getestet und gegen die Produktziele bewertet wurden.
+- Codeentwurf, Refactoring und Dokumentationsvorschlaege
+- iterative Umsetzung entlang der Prompt-Historie

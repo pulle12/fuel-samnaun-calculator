@@ -1,0 +1,1 @@
+fixe jetzt noch bitte dass das favicon geladen bzw oben angezeigt wird. und bitte fuege die scraping mechanismus erklaerung in AIDD_DOKUMENTATION hinzu bzw update diese ganze datei mit allen neuen funktionalitaeten und technologien und die neuen prompts verlinken und so weiter bitte und wieder als prompt 12 abspeichern

@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi import Response
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 
@@ -12,12 +14,23 @@ from app.services.distance_api import get_route_info
 from app.services.fuel_api import resolve_fuel_prices
 
 app = FastAPI(title="Samnaun Fuel Checker", version="0.1.0")
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+FAVICON_VERSION = "20260325-2"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/favicon.ico", include_in_schema=False)
-def favicon() -> FileResponse:
-    return FileResponse(PROJECT_ROOT / "favicon.ico")
+def favicon() -> Response:
+    favicon_path = STATIC_DIR / "favicon.ico"
+    if favicon_path.exists():
+        return FileResponse(
+            favicon_path,
+            media_type="image/x-icon",
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
+    return Response(status_code=204)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -29,7 +42,8 @@ def home() -> str:
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Samnaun Fuel Checker</title>
-    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=__FAVICON_VERSION__" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=__FAVICON_VERSION__" />
     <style>
         :root {
             --bg-1: #f4efe6;
@@ -401,7 +415,7 @@ def home() -> str:
     </script>
 </body>
 </html>
-"""
+""".replace("__FAVICON_VERSION__", FAVICON_VERSION)
 
 
 @app.post("/calculate", response_model=CalculationResponse)

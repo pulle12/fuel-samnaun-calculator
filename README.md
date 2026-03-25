@@ -55,6 +55,12 @@ Additional quality check:
 - Fix: block-based extraction requiring the ordered pattern `Dieselpreise -> Benzinpreise (Super 95) -> Benzinpreise (Super 98)` with CHF values.
 - Acceptance: parser tests updated to include translation-label noise and verify correct CHF extraction for all three fuel types.
 
+Additional quality check:
+- Related prompts: [prompts/12-prompt.md](prompts/12-prompt.md), [prompts/13-prompt.md](prompts/13-prompt.md)
+- Case: favicon was served but still not visible in browser tab due to aggressive favicon caching.
+- Fix: cache-busting query in HTML icon links plus explicit `Cache-Control` headers on `/favicon.ico` response.
+- Acceptance: favicon endpoint resolves to `app/static/favicon.ico` with `image/x-icon` content type.
+
 AI contribution:
 - Draft implementation of modules and API wiring
 - Iterative code changes based on prompt updates
@@ -78,7 +84,6 @@ fuel-samnaun-calculator/
 ├── tests/
 │   ├── test_calculator.py
 │   └── test_fuel_api.py
-├── favicon.ico
 ├── README.md
 ├── PRD.md
 ├── prompts/
@@ -92,7 +97,9 @@ fuel-samnaun-calculator/
 │   ├── 08-prompt.md
 │   ├── 09-prompt.md
 │   ├── 10-prompt.md
-│   └── 11-prompt.md
+│   ├── 11-prompt.md
+│   ├── 12-prompt.md
+│   └── 13-prompt.md
 └── requirements.txt
 ```
 
