@@ -22,11 +22,8 @@ A structured Python prototype that evaluates whether driving to Samnaun for refu
 This Project was developed using an AI-Driven Development (AIDD) approach, where the initial requirements and subsequent enhancements were guided by structured prompts. The prompts are documented in the following files:
 
 - Prompt archive folder: `prompts/`
-- Prompt 1: `prompts/01-prompt.md`
-- Prompt 2: `prompts/02-prompt.md`
-- Prompt 3: `prompts/03-prompt.md`
 
-Detailed process and architecture explanation:
+Detailed process, links to prompts and architecture explanation:
 
 - `AIDD_DOKUMENTATION.md`
 
