@@ -1,0 +1,1 @@
+mache eine markdown erklärung wie ich das mit AIDD machte alles und wie der techstack aufgebaut ist bzw woher die daten kommen und wie sie verarbeitet werden und so weiter und welche technologien und so alle eingesetzt werden

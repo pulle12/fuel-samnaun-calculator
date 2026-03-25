@@ -25,6 +25,10 @@ This Project was developed using an AI-Driven Development (AIDD) approach, where
 - Prompt 2 (Extension incl. GUI and README-hint): `02-prompt.md`
 - Prompt 3 (Live API and favicon extension): `03-prompt.md`
 
+Detailed process and architecture explanation:
+
+- `AIDD_DOKUMENTATION.md`
+
 ## Project Structure
 
 ```text
