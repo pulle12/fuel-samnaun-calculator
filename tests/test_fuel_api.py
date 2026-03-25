@@ -55,3 +55,30 @@ def test_resolve_fuel_prices_fallback_when_no_live_data(monkeypatch) -> None:
 
     assert prices.home_source == "austria_fallback"
     assert prices.samnaun_source == "samnaun_socar_fallback"
+
+
+def test_resolve_fuel_prices_zams_uses_nearest_live_when_eni_has_no_price(monkeypatch) -> None:
+    def fake_fetch_econtrol_stations(latitude: float, longitude: float) -> list[dict]:
+        return [
+            {
+                "name": "ENI",
+                "distance": 0.01,
+                "prices": [],
+            },
+            {
+                "name": "AVANTI",
+                "distance": 0.30,
+                "prices": [{"fuelType": "DIE", "amount": 2.20}],
+            },
+        ]
+
+    monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", fake_fetch_econtrol_stations)
+
+    prices = fuel_api.resolve_fuel_prices(
+        start_location="Zams",
+        manual_home_price=None,
+        manual_samnaun_price=None,
+    )
+
+    assert prices.fuel_price_home == 2.20
+    assert prices.home_source.startswith("econtrol_nearest_zams")

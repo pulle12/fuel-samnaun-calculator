@@ -200,6 +200,12 @@ def _resolve_home_price(start_location: str, manual_home_price: Optional[float])
                 price, station_name = eni_choice
                 return price, f"econtrol_eni_zams:{station_name}"
 
+            # If ENI is found but has no valid live price, use nearest live station in Zams area.
+            nearest_choice = _pick_station_price(zams_stations)
+            if nearest_choice is not None:
+                price, station_name = nearest_choice
+                return price, f"econtrol_nearest_zams:{station_name}"
+
         return get_simulated_fuel_price("eni_zams"), "eni_zams_fallback"
 
     coords = _geocode_location(start_location)

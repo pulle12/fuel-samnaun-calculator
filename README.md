@@ -40,6 +40,12 @@ My contribution:
 - Validation of outputs, testing strategy, and acceptance checks
 - Documentation structure and project narrative
 
+Example quality check implemented:
+- Case: `start_location=Zams` sometimes returned very low net savings because ENI entries were present but had no live price payload.
+- Check: compared runtime output (`home_source`, `fuel_price_home`, `net_savings`) against expected live-data behavior.
+- Fix: if ENI has no live price, use nearest live-priced station in Zams area before simulated fallback.
+- Acceptance: regression test added in `tests/test_fuel_api.py` to keep behavior stable.
+
 AI contribution:
 - Draft implementation of modules and API wiring
 - Iterative code changes based on prompt updates
