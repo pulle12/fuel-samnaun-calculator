@@ -1,0 +1,1 @@
+erweitere das produkt um folgendes: hinweis in readme dass aidd verwendet wird mit hinweisen auf die prompt files. baue in der app eine gui ein im browser auf localhost wo fastapi laeuft und man alles schoen eingeben kann und alles gut sieht

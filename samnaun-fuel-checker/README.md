@@ -17,6 +17,13 @@ A structured Python prototype that evaluates whether driving to Samnaun for refu
 - requests
 - pytest
 
+## AIDD Workflow Note
+
+This Project was developed using an AI-Driven Development (AIDD) approach, where the initial requirements and subsequent enhancements were guided by structured prompts. The prompts are documented in the following files:
+
+- Prompt 1 (original specification): `copilot_prompt.md`
+- Prompt 2 (Extension incl. GUI and README-hint): `02-prompt.md`
+
 ## Project Structure
 
 ```text
@@ -32,6 +39,7 @@ samnaun-fuel-checker/
 │   └── test_calculator.py
 ├── README.md
 ├── PRD.md
+├── 02-prompt.md
 ├── copilot_prompt.md
 └── requirements.txt
 ```
@@ -50,6 +58,11 @@ pip install -r requirements.txt
 ```bash
 uvicorn app.main:app --reload
 ```
+
+4. Open the browser GUI:
+
+- Local app UI: `http://127.0.0.1:8000/`
+- Interactive API docs: `http://127.0.0.1:8000/docs`
 
 ## API
 
@@ -87,3 +100,4 @@ Example response:
 
 - The current distance service is a mock map-based implementation.
 - The fuel API service contains both a simulated price source and a placeholder for real API integration.
+- A browser GUI is available on the root endpoint `/` to enter values and inspect results visually.
