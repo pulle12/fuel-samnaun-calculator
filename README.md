@@ -25,7 +25,7 @@ This Project was developed using an AI-Driven Development (AIDD) approach, where
 
 Detailed process, links to prompts and architecture explanation:
 
-- `AIDD_DOKUMENTATION.md`
+- [AIDD_DOKUMENTATION.md](AIDD_DOKUMENTATION.md)
 
 ## Contribution Transparency (My Role vs AI)
 
