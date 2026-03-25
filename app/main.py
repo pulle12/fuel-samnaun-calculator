@@ -381,8 +381,14 @@ def home() -> str:
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
+            const startLocation = (form.start_location.value || "").trim();
+            if (startLocation.length < 2) {
+                alert("Bitte einen gueltigen Startort eingeben (mindestens 2 Zeichen).");
+                return;
+            }
+
             const payload = {
-                start_location: form.start_location.value,
+                start_location: startLocation,
                 fuel_type: form.fuel_type.value,
                 consumption: Number(form.consumption.value),
                 tank_size: Number(form.tank_size.value),
