@@ -46,6 +46,7 @@ def test_resolve_fuel_prices_zams_prefers_eni_from_econtrol(monkeypatch) -> None
 def test_resolve_fuel_prices_fallback_when_no_live_data(monkeypatch) -> None:
     monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", lambda latitude, longitude, fuel_type: None)
     monkeypatch.setattr(fuel_api, "_geocode_location", lambda location: None)
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
 
     prices = fuel_api.resolve_fuel_prices(
         start_location="UnknownTown",
@@ -87,6 +88,7 @@ def test_resolve_fuel_prices_zams_uses_nearest_live_when_eni_has_no_price(monkey
 def test_resolve_fuel_prices_supports_benzin98_simulation(monkeypatch) -> None:
     monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", lambda latitude, longitude, fuel_type: None)
     monkeypatch.setattr(fuel_api, "_geocode_location", lambda location: None)
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
 
     prices = fuel_api.resolve_fuel_prices(
         start_location="UnknownTown",
@@ -96,3 +98,27 @@ def test_resolve_fuel_prices_supports_benzin98_simulation(monkeypatch) -> None:
     )
 
     assert prices.fuel_price_home == fuel_api.SIMULATED_PRICES_EUR_PER_L["benzin98"]["austria"]
+
+
+def test_extract_hangl_price_by_fuel_type_parses_chf_values() -> None:
+    page_text = (
+        '"fuel_prices":"Benzinpreise (Super 95)","diesel_prices":"Dieselpreise","super_prices":"Benzinpreise (Super 98)",' 
+        "Dieselpreise 1.510 CHF 1.631 EUR 1.490 CHF 1.609 EUR "
+        "Benzinpreise (Super 95) 1.360 CHF 1.469 EUR 1.340 CHF 1.447 EUR "
+        "Benzinpreise (Super 98) 1.480 CHF 1.598 EUR 1.460 CHF 1.577 EUR Aktueller Vorzugskurs"
+    )
+
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "diesel") == 1.510
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin95") == 1.360
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin98") == 1.480
+
+
+def test_extract_interzegg_price_by_fuel_type_uses_cheapest_entry() -> None:
+    page_text = (
+        "DIESEL CHF 1,49 / 1,620 EUR BENZIN 95 CHF 1,34 / 1,456 EUR BENZIN 98 CHF 1,46 / 1,586 EUR "
+        "DIESEL CHF 1,53 / 1,663 EUR BENZIN 95 CHF 1,38 / 1,500 EUR"
+    )
+
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "diesel") == 1.49
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin95") == 1.34
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin98") == 1.46

@@ -1,0 +1,1 @@
+warum steht bei samnaun als quelle oft fallback? pruefe bitte eine bessere, moeglichst offizielle quelle fuer samnaun/socar-preise und schau auch auf samnaun.ch, damit live-preise zuverlaessiger kommen.

@@ -7,10 +7,11 @@ Diese Datei beschreibt, wie das Projekt mit AIDD (AI-Driven Development) aufgeba
 AIDD bedeutet hier: Die Entwicklung erfolgte iterativ über klar abgegrenzte Prompts, die jeweils neue Anforderungen eingefuehrt haben.
 
 Eingesetzte Prompt-Dateien im Projekt:
-- `01-prompt.md`: Urspruengliche Produktanforderung und Grundstruktur
-- `02-prompt.md`: GUI-Erweiterung und README-Hinweise
-- `03-prompt.md`: Genauere Live-Datenanforderungen (Distanzen, Preise, Favicon)
-- `04-prompt.md`: Wunsch nach umfassender technischer Erklaerung
+- `prompts/01-prompt.md`: Urspruengliche Produktanforderung und Grundstruktur
+- `prompts/02-prompt.md`: GUI-Erweiterung und README-Hinweise
+- `prompts/03-prompt.md`: Genauere Live-Datenanforderungen (Distanzen, Preise, Favicon)
+- `prompts/04-prompt.md`: Wunsch nach umfassender technischer Erklaerung
+- `prompts/05-prompt.md` bis `prompts/11-prompt.md`: weitere iterative Erweiterungen und Qualitaetsanpassungen
 
 Begleitende Spezifikationen:
 - `PRD.md`: Produktanforderungen (Problem, Nutzer, MVP, Metriken)
@@ -106,8 +107,9 @@ Begleitende Spezifikationen:
 - Spezieller Fokus fuer Zams: ENI-Station priorisiert
 
 ### 6.4 Kraftstoffpreise (Samnaun)
+- Priorisiert veroeffentlichte Preisdarstellung der offiziellen Betreiberseiten (Hangl Mobility, dann Interzegg)
 - Optionaler konfigurierbarer Endpoint fuer SOCAR Samnaun
-- Ohne konfigurierten Endpoint: simulierter Fallback
+- Ohne verfuegbare Live-Quelle: simulierter Fallback
 
 ## 7. Datenverarbeitung: End-to-End Flow
 1. Nutzer gibt Eingaben in GUI oder per API.

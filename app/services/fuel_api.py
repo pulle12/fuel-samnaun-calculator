@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Literal, Optional
 
@@ -31,6 +32,8 @@ SIMULATED_PRICES_EUR_PER_L: dict[FuelType, dict[str, float]] = {
 DEFAULT_TIMEOUT_SECONDS = 4.0
 NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 ECONTROL_SEARCH_URL = "https://api.e-control.at/sprit/1.0/search/gas-stations/by-address"
+HANGL_MOBILITY_URL = "https://www.hangl-mobility.ch/"
+INTERZEGG_TANKSTELLEN_URL = "https://www.interzegg.ch/de/tankstellen"
 
 # E-Control supports DIE and SUP on this endpoint. For 98 octane we use SUP as best available proxy.
 ECONTROL_FUEL_TYPE_BY_APP: dict[FuelType, str] = {
@@ -80,6 +83,96 @@ def _fetch_price_from_json_endpoint(
                 parsed = _safe_float(payload.get(key))
                 if parsed is not None:
                     return parsed
+    return None
+
+
+def _fetch_page_text(url: str, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS) -> Optional[str]:
+    headers = {"User-Agent": "samnaun-fuel-checker/0.4"}
+    try:
+        response = requests.get(url, timeout=timeout_seconds, headers=headers)
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+
+    # Keep parsing simple and robust by flattening HTML to text.
+    html_text = response.text
+    text = re.sub(r"<[^>]+>", " ", html_text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _parse_price_token(raw: str) -> Optional[float]:
+    normalized = raw.strip().replace(" ", "").replace("'", "").replace(",", ".")
+    return _safe_float(normalized)
+
+
+def _extract_first_chf_price(section_text: str) -> Optional[float]:
+    match = re.search(r"(\d{1,2}[\.,]\d{2,3})\s*CHF", section_text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return _parse_price_token(match.group(1))
+
+
+def _extract_hangl_price_block(page_text: str) -> Optional[dict[FuelType, float]]:
+    # Match the real rendered price block and capture first CHF amount per fuel type.
+    pattern = (
+        r"Dieselpreise\s*(?P<diesel>\d{1,2}[\.,]\d{2,3})\s*CHF"
+        r".*?Benzinpreise\s*\(Super\s*95\)\s*(?P<benzin95>\d{1,2}[\.,]\d{2,3})\s*CHF"
+        r".*?Benzinpreise\s*\(Super\s*98\)\s*(?P<benzin98>\d{1,2}[\.,]\d{2,3})\s*CHF"
+    )
+    match = re.search(pattern, page_text, flags=re.IGNORECASE)
+    if not match:
+        return None
+
+    parsed: dict[FuelType, float] = {}
+    for key in ("diesel", "benzin95", "benzin98"):
+        value = _parse_price_token(match.group(key))
+        if value is None:
+            return None
+        parsed[key] = value
+    return parsed
+
+
+def _extract_hangl_price_by_fuel_type(page_text: str, fuel_type: FuelType) -> Optional[float]:
+    block = _extract_hangl_price_block(page_text)
+    if block is None:
+        return None
+    return block.get(fuel_type)
+
+
+def _extract_interzegg_price_by_fuel_type(page_text: str, fuel_type: FuelType) -> Optional[float]:
+    pattern_by_fuel_type: dict[FuelType, str] = {
+        "diesel": r"DIESEL\s*CHF\s*(\d{1,2}[\.,]\d{2,3})",
+        "benzin95": r"BENZIN\s*95\s*CHF\s*(\d{1,2}[\.,]\d{2,3})",
+        "benzin98": r"BENZIN\s*98\s*CHF\s*(\d{1,2}[\.,]\d{2,3})",
+    }
+
+    matches = re.findall(pattern_by_fuel_type[fuel_type], page_text, flags=re.IGNORECASE)
+    if not matches:
+        return None
+
+    parsed_prices = [_parse_price_token(raw) for raw in matches]
+    valid_prices = [price for price in parsed_prices if price is not None]
+    if not valid_prices:
+        return None
+
+    # Interzegg lists multiple station brands; take the cheapest currently published price.
+    return min(valid_prices)
+
+
+def _fetch_live_samnaun_price(fuel_type: FuelType) -> Optional[tuple[float, str]]:
+    hangl_page_text = _fetch_page_text(HANGL_MOBILITY_URL)
+    if hangl_page_text:
+        hangl_price = _extract_hangl_price_by_fuel_type(hangl_page_text, fuel_type)
+        if hangl_price is not None:
+            return hangl_price, "samnaun_socar_live_hangl_html"
+
+    interzegg_page_text = _fetch_page_text(INTERZEGG_TANKSTELLEN_URL)
+    if interzegg_page_text:
+        interzegg_price = _extract_interzegg_price_by_fuel_type(interzegg_page_text, fuel_type)
+        if interzegg_price is not None:
+            return interzegg_price, "samnaun_live_interzegg_html"
+
     return None
 
 
@@ -252,6 +345,10 @@ def _resolve_home_price(
 def _resolve_samnaun_price(manual_samnaun_price: Optional[float], fuel_type: FuelType) -> tuple[float, str]:
     if manual_samnaun_price is not None:
         return manual_samnaun_price, "manual_input"
+
+    live_price = _fetch_live_samnaun_price(fuel_type)
+    if live_price is not None:
+        return live_price
 
     # Optional station-specific endpoint, e.g. an internal proxy to a paid/official provider.
     samnaun_socar_url = os.getenv("SAMNAUN_SOCAR_PRICE_API_URL", "").strip()

@@ -21,9 +21,10 @@ A structured Python prototype that evaluates whether driving to Samnaun for refu
 
 This Project was developed using an AI-Driven Development (AIDD) approach, where the initial requirements and subsequent enhancements were guided by structured prompts. The prompts are documented in the following files:
 
-- Prompt 1 (original specification): `copilot_prompt.md`
-- Prompt 2 (Extension incl. GUI and README-hint): `02-prompt.md`
-- Prompt 3 (Live API and favicon extension): `03-prompt.md`
+- Prompt archive folder: `prompts/`
+- Prompt 1: `prompts/01-prompt.md`
+- Prompt 2: `prompts/02-prompt.md`
+- Prompt 3: `prompts/03-prompt.md`
 
 Detailed process and architecture explanation:
 
@@ -40,12 +41,19 @@ My contribution:
 - Validation of outputs, testing strategy, and acceptance checks
 - Documentation structure and project narrative
 
-Example quality check implemented:
-- Related prompts: [07-prompt.md](07-prompt.md), [08-prompt.md](08-prompt.md), [09-prompt.md](09-prompt.md)
+Example quality checks implemented:
+- Related prompts: [prompts/07-prompt.md](prompts/07-prompt.md), [prompts/08-prompt.md](prompts/08-prompt.md), [prompts/09-prompt.md](prompts/09-prompt.md)
 - Case: `start_location=Zams` sometimes returned very low net savings because ENI entries were present but had no live price payload.
 - Check: compared runtime output (`home_source`, `fuel_price_home`, `net_savings`) against expected live-data behavior.
 - Fix: if ENI has no live price, use nearest live-priced station in Zams area before simulated fallback.
 - Acceptance: regression test added in `tests/test_fuel_api.py` to keep behavior stable.
+
+Additional quality check:
+- Related prompts: [prompts/10-prompt.md](prompts/10-prompt.md), [prompts/11-prompt.md](prompts/11-prompt.md)
+- Case: Hangl source parsing returned values for Diesel and 98, but not reliably for 95, causing Samnaun fallback.
+- Root cause: parser matched translation labels in page content instead of the actual rendered fuel-price block.
+- Fix: block-based extraction requiring the ordered pattern `Dieselpreise -> Benzinpreise (Super 95) -> Benzinpreise (Super 98)` with CHF values.
+- Acceptance: parser tests updated to include translation-label noise and verify correct CHF extraction for all three fuel types.
 
 AI contribution:
 - Draft implementation of modules and API wiring
@@ -73,15 +81,18 @@ fuel-samnaun-calculator/
 ├── favicon.ico
 ├── README.md
 ├── PRD.md
-├── 01-prompt.md
-├── 02-prompt.md
-├── 03-prompt.md
-├── 04-prompt.md
-├── 05-prompt.md
-├── 06-prompt.md
-├── 07-prompt.md
-├── 08-prompt.md
-├── 09-prompt.md
+├── prompts/
+│   ├── 01-prompt.md
+│   ├── 02-prompt.md
+│   ├── 03-prompt.md
+│   ├── 04-prompt.md
+│   ├── 05-prompt.md
+│   ├── 06-prompt.md
+│   ├── 07-prompt.md
+│   ├── 08-prompt.md
+│   ├── 09-prompt.md
+│   ├── 10-prompt.md
+│   └── 11-prompt.md
 └── requirements.txt
 ```
 
@@ -150,9 +161,12 @@ Example response:
 - Note for `benzin98`: E-Control endpoint is queried with `SUP` (best available proxy for 98 octane on this endpoint).
 - Samnaun SOCAR source priority:
   - Manual input if provided
+  - Official Samnaun sources via published website data parsing:
+    - `hangl-mobility.ch` (SOCAR/Mobility Center live displayed prices)
+    - `interzegg.ch/de/tankstellen` as secondary live source
   - Optional custom endpoint via `SAMNAUN_SOCAR_PRICE_API_URL`
   - Fallback simulation
-- Why Samnaun stays configurable: no guaranteed open, official, unlimited public API endpoint for the exact SOCAR Samnaun price is integrated by default.
+- Why a fallback still exists: the official websites are human-facing pages (not guaranteed stable API contracts), so parsing may occasionally fail.
 - A browser GUI is available on the root endpoint `/` to enter values and inspect results visually.
 
 ## Known Limitations
@@ -160,6 +174,7 @@ Example response:
 - Public data services (e.g., OSRM/Nominatim) may be rate-limited or temporarily unavailable.
 - Google routing is optional and requires a valid API key and billing-enabled account.
 - The exact SOCAR Samnaun live price is only available if a dedicated endpoint is configured.
+- Official Samnaun price pages can change layout; parser resilience is improved but not guaranteed forever.
 - Fuel station naming and matching (e.g., ENI in Zams) depends on third-party API data quality.
 
 ## Optional Environment Variables
