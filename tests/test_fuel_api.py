@@ -54,4 +54,4 @@ def test_resolve_fuel_prices_fallback_when_no_live_data(monkeypatch) -> None:
     )
 
     assert prices.home_source == "austria_fallback"
-    assert prices.samnaun_source == "samnaun_bp_fallback"
+    assert prices.samnaun_source == "samnaun_socar_fallback"

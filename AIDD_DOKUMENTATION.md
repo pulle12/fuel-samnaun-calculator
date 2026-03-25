@@ -14,7 +14,6 @@ Eingesetzte Prompt-Dateien im Projekt:
 
 Begleitende Spezifikationen:
 - `PRD.md`: Produktanforderungen (Problem, Nutzer, MVP, Metriken)
-- `copilot_prompt.md`: Ausfuehrliche Ursprungsvorgabe
 
 ## 3. Entwicklungsprozess (AIDD-Workflow)
 1. Anforderungen in Prompt-Form erfassen.
@@ -55,7 +54,7 @@ Begleitende Spezifikationen:
   - Break-even Distanz
 
 ### 5.2 `app/services/distance_api.py`
-- Ermittelt Streckendaten zur BP Samnaun
+- Ermittelt Streckendaten zur SOCAR Samnaun
 - Quelle-Prioritaet:
   1. Google Distance Matrix (wenn `GOOGLE_MAPS_API_KEY` gesetzt)
   2. OSRM (offener Routing-Dienst)
@@ -72,7 +71,7 @@ Begleitende Spezifikationen:
   4. Simulierter Fallback
 - Samnaun-Preis Prioritaet:
   1. Manuelle Eingabe
-  2. Optionaler Endpoint (`SAMNAUN_BP_PRICE_API_URL`)
+  2. Optionaler Endpoint (`SAMNAUN_SOCAR_PRICE_API_URL`, legacy: `SAMNAUN_BP_PRICE_API_URL`)
   3. Simulierter Fallback
 - Liefert Quellenkennzeichnung (`home_source`, `samnaun_source`)
 
@@ -107,7 +106,7 @@ Begleitende Spezifikationen:
 - Spezieller Fokus fuer Zams: ENI-Station priorisiert
 
 ### 6.4 Kraftstoffpreise (Samnaun)
-- Optionaler konfigurierbarer Endpoint fuer BP Samnaun
+- Optionaler konfigurierbarer Endpoint fuer SOCAR Samnaun
 - Ohne konfigurierten Endpoint: simulierter Fallback
 
 ## 7. Datenverarbeitung: End-to-End Flow
@@ -136,7 +135,26 @@ Externe APIs koennen zeitweise nicht verfuegbar sein, Limits haben oder struktur
 ## 10. Relevante Konfiguration
 Optionale Umgebungsvariablen:
 - `GOOGLE_MAPS_API_KEY`: Aktiviert Google-Distanzberechnung
-- `SAMNAUN_BP_PRICE_API_URL`: Optionaler Live-Preisendpoint fuer Samnaun BP
+- `SAMNAUN_SOCAR_PRICE_API_URL`: Optionaler Live-Preisendpoint fuer Samnaun SOCAR
+- `SAMNAUN_BP_PRICE_API_URL`: Legacy-Name, weiterhin unterstuetzt
 
 ## 11. Zusammenfassung
 Das System kombiniert AIDD-gestuetzte, iterative Entwicklung mit einer sauberen Python-Architektur. Die Kernberechnung ist deterministisch und testbar, waehrend externe Datenquellen flexibel angebunden sind. Durch Quellen-Priorisierung und Fallbacks bleibt die Anwendung praktisch nutzbar, transparent und robust.
+
+## 12. Eigener Beitrag vs AI-Unterstuetzung
+Diese Abgrenzung ist fuer Portfolio-Transparenz bewusst explizit dokumentiert.
+
+Eigener Beitrag:
+- Problemdefinition, Zielbild und Priorisierung der Anforderungen
+- Prompt-Strategie und Iterationssteuerung (01 bis 04)
+- Auswahl und Bewertung der Datenquellen (offiziell/offen/fallback)
+- Architekturentscheidungen (Separation of Concerns, Fallback-Design, Erklaerbarkeit)
+- Qualitaetskriterien und Testabdeckung als Abnahmegrundlage
+
+AI-Unterstuetzung:
+- Vorschlaege und Entwurf von Codebausteinen
+- Umsetzung einzelner Iterationsschritte nach Promptvorgaben
+- Entwuerfe fuer technische Dokumentation
+
+Abnahmeprinzip:
+- Änderungen gelten erst als uebernommen, wenn sie inhaltlich geprueft, getestet und gegen die Produktziele bewertet wurden.

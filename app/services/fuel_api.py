@@ -9,7 +9,7 @@ import requests
 
 SIMULATED_PRICES_EUR_PER_L: dict[str, float] = {
     "austria": 1.62,
-    "samnaun_bp": 1.34,
+    "samnaun_socar": 1.34,
     "eni_zams": 1.59,
 }
 
@@ -219,13 +219,17 @@ def _resolve_samnaun_price(manual_samnaun_price: Optional[float]) -> tuple[float
         return manual_samnaun_price, "manual_input"
 
     # Optional station-specific endpoint, e.g. an internal proxy to a paid/official provider.
-    samnaun_bp_url = os.getenv("SAMNAUN_BP_PRICE_API_URL", "").strip()
-    if samnaun_bp_url:
-        live_price = _fetch_price_from_json_endpoint(samnaun_bp_url)
-        if live_price is not None:
-            return live_price, "samnaun_bp_live_api"
+    samnaun_socar_url = os.getenv("SAMNAUN_SOCAR_PRICE_API_URL", "").strip()
+    if not samnaun_socar_url:
+        # Backward compatibility for previous variable naming.
+        samnaun_socar_url = os.getenv("SAMNAUN_BP_PRICE_API_URL", "").strip()
 
-    return get_simulated_fuel_price("samnaun_bp"), "samnaun_bp_fallback"
+    if samnaun_socar_url:
+        live_price = _fetch_price_from_json_endpoint(samnaun_socar_url)
+        if live_price is not None:
+            return live_price, "samnaun_socar_live_api"
+
+    return get_simulated_fuel_price("samnaun_socar"), "samnaun_socar_fallback"
 
 
 def resolve_fuel_prices(

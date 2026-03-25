@@ -1,0 +1,1 @@
+und bessere jetzt auch noch das aus: bp samnaun ist jetzt doch die SOCAR samnaun oder? und diesen  prompt von gerade und den von davor mit dem prüfen ob transparenz gegeben ist speicherst du als prompts 5 und 6 ab bitte

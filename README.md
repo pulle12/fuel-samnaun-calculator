@@ -29,6 +29,25 @@ Detailed process and architecture explanation:
 
 - `AIDD_DOKUMENTATION.md`
 
+## Contribution Transparency (My Role vs AI)
+
+This project was built using AI-assisted development.
+
+My contribution:
+- Problem framing and scope definition
+- Prompt design and iterative requirement refinement
+- Architecture and fallback strategy decisions
+- Validation of outputs, testing strategy, and acceptance checks
+- Documentation structure and project narrative
+
+AI contribution:
+- Draft implementation of modules and API wiring
+- Iterative code changes based on prompt updates
+- Initial test scaffolding and documentation drafts
+
+Why this matters:
+- The repository intentionally demonstrates practical AI-assisted software engineering, not manual coding-only development.
+
 ## Project Structure
 
 ```text
@@ -113,14 +132,22 @@ Example response:
   - If `start_location` is `Zams`: E-Control nearest ENI station near Zams
   - Otherwise: E-Control nearest station around geocoded start location
   - Fallback simulation if no live result is available
-- Samnaun BP source priority:
+- Samnaun SOCAR source priority:
   - Manual input if provided
-  - Optional custom endpoint via `SAMNAUN_BP_PRICE_API_URL`
+  - Optional custom endpoint via `SAMNAUN_SOCAR_PRICE_API_URL`
   - Fallback simulation
-- Why Samnaun stays configurable: no guaranteed open, official, unlimited public API endpoint for the exact BP Samnaun price is integrated by default.
+- Why Samnaun stays configurable: no guaranteed open, official, unlimited public API endpoint for the exact SOCAR Samnaun price is integrated by default.
 - A browser GUI is available on the root endpoint `/` to enter values and inspect results visually.
+
+## Known Limitations
+
+- Public data services (e.g., OSRM/Nominatim) may be rate-limited or temporarily unavailable.
+- Google routing is optional and requires a valid API key and billing-enabled account.
+- The exact SOCAR Samnaun live price is only available if a dedicated endpoint is configured.
+- Fuel station naming and matching (e.g., ENI in Zams) depends on third-party API data quality.
 
 ## Optional Environment Variables
 
 - `GOOGLE_MAPS_API_KEY`: enables Google Distance Matrix routing.
-- `SAMNAUN_BP_PRICE_API_URL`: optional JSON endpoint for live Samnaun BP price.
+- `SAMNAUN_SOCAR_PRICE_API_URL`: optional JSON endpoint for live SOCAR Samnaun price.
+- `SAMNAUN_BP_PRICE_API_URL`: legacy alias, still supported for backward compatibility.

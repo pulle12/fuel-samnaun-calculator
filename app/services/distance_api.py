@@ -14,9 +14,9 @@ NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 OSRM_ROUTE_URL = "https://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}"
 GOOGLE_DISTANCE_MATRIX_URL = "https://maps.googleapis.com/maps/api/distancematrix/json"
 
-# BP Samnaun (approximate coordinates), used as fixed destination for route calculation.
-SAMNAUN_BP_LAT = 46.94486
-SAMNAUN_BP_LON = 10.36290
+# SOCAR Samnaun (approximate coordinates), used as fixed destination for route calculation.
+SAMNAUN_SOCAR_LAT = 46.94486
+SAMNAUN_SOCAR_LON = 10.36290
 
 # Simple mock map; can be replaced by a real routing API later.
 ROUND_TRIP_DISTANCES_KM: dict[str, float] = {
@@ -69,8 +69,8 @@ def _fetch_route_one_way_km_and_hours(start_lat: float, start_lon: float) -> tup
     url = OSRM_ROUTE_URL.format(
         start_lon=start_lon,
         start_lat=start_lat,
-        end_lon=SAMNAUN_BP_LON,
-        end_lat=SAMNAUN_BP_LAT,
+        end_lon=SAMNAUN_SOCAR_LON,
+        end_lat=SAMNAUN_SOCAR_LAT,
     )
     params = {
         "overview": "false",
@@ -107,7 +107,7 @@ def _fetch_google_route_one_way_km_and_hours(start_lat: float, start_lon: float)
 
     params = {
         "origins": f"{start_lat},{start_lon}",
-        "destinations": f"{SAMNAUN_BP_LAT},{SAMNAUN_BP_LON}",
+        "destinations": f"{SAMNAUN_SOCAR_LAT},{SAMNAUN_SOCAR_LON}",
         "mode": "driving",
         "key": api_key,
     }
