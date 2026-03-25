@@ -1,0 +1,1 @@
+bitte mache jetzt das als prompt 9. rechts dort wo das ergebnis mit lohnt sich und ersparnis und so kommt die preise von lokal und samnaun deutlicher herschreiben und das unten alles genauer darstellen und erklären

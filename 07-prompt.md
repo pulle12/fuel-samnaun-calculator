@@ -1,0 +1,1 @@
+warum ist bei zams die ersparnis auf einmal nur mehr 3,91 euro und davor war es bei 33 oder so bessere das aus bitte und schreibe diese qualitätsprüfung als beispiel rein in readme zu - Validation of outputs, testing strategy, and acceptance checks dazu

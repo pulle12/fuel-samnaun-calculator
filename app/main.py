@@ -123,7 +123,7 @@ def home() -> str:
             font-size: 0.95rem;
         }
 
-        input {
+        input, select {
             border: 1px solid rgba(31, 42, 46, 0.2);
             border-radius: 10px;
             padding: 10px 12px;
@@ -133,7 +133,7 @@ def home() -> str:
             transition: border-color 150ms ease, box-shadow 150ms ease;
         }
 
-        input:focus {
+        input:focus, select:focus {
             border-color: var(--accent);
             box-shadow: 0 0 0 4px var(--ring);
             outline: none;
@@ -169,6 +169,53 @@ def home() -> str:
             padding: 14px;
             background: #fff;
             min-height: 220px;
+        }
+
+        .result-title {
+            margin: 2px 0 10px;
+            font-size: 1rem;
+            color: var(--ink);
+        }
+
+        .price-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0 12px;
+        }
+
+        .price-card {
+            border: 1px solid rgba(31, 42, 46, 0.1);
+            border-radius: 12px;
+            padding: 10px;
+            background: #fffaf1;
+        }
+
+        .price-card h4 {
+            margin: 0 0 4px;
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .price-value {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .source-note {
+            margin: 3px 0 0;
+            font-size: 0.78rem;
+            color: var(--muted);
+        }
+
+        .detail-list {
+            margin: 10px 0 0;
+            padding-left: 18px;
+            color: var(--muted);
+            line-height: 1.4;
+            font-size: 0.92rem;
         }
 
         .badge {
@@ -221,6 +268,15 @@ def home() -> str:
                     </div>
 
                     <div class="field">
+                        <label for="fuel_type">Kraftstofftyp</label>
+                        <select id="fuel_type" name="fuel_type">
+                            <option value="diesel" selected>Diesel</option>
+                            <option value="benzin95">Benzin 95 (Super)</option>
+                            <option value="benzin98">Benzin 98 (Super Plus)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
                         <label for="consumption">Verbrauch (L/100 km)</label>
                         <input id="consumption" name="consumption" type="number" step="0.1" min="0.1" value="6.2" required />
                     </div>
@@ -266,16 +322,41 @@ def home() -> str:
             const worthItClass = data.worth_it ? "" : "bad";
             const worthItText = data.worth_it ? "Lohnt sich" : "Lohnt sich nicht";
             const netClass = data.net_savings >= 0 ? "var(--ok)" : "var(--bad)";
+            const fuelTypeLabelMap = {
+                diesel: "Diesel",
+                benzin95: "Benzin 95",
+                benzin98: "Benzin 98",
+            };
+            const fuelTypeLabel = fuelTypeLabelMap[data.fuel_type] || data.fuel_type;
+            const priceDiffPerLiter = data.fuel_price_home_used - data.fuel_price_samnaun_used;
 
             resultEl.innerHTML = `
                 <span class="badge ${worthItClass}">${worthItText}</span>
+                <h3 class="result-title">Ergebnis fuer ${fuelTypeLabel}</h3>
                 <p class="metric"><strong>Nettoersparnis:</strong> <span style="color:${netClass}; font-weight:700;">${data.net_savings.toFixed(2)} EUR</span></p>
+                <div class="price-grid">
+                    <div class="price-card">
+                        <h4>Preis lokal</h4>
+                        <p class="price-value">${data.fuel_price_home_used.toFixed(3)} EUR/L</p>
+                        <p class="source-note">Quelle: ${data.home_price_source}</p>
+                    </div>
+                    <div class="price-card">
+                        <h4>Preis Samnaun</h4>
+                        <p class="price-value">${data.fuel_price_samnaun_used.toFixed(3)} EUR/L</p>
+                        <p class="source-note">Quelle: ${data.samnaun_price_source}</p>
+                    </div>
+                </div>
                 <p class="metric"><strong>Round-trip Distanz:</strong> ${data.round_trip_distance_km.toFixed(1)} km</p>
                 <p class="metric"><strong>Trip-Fuel:</strong> ${data.trip_fuel_liters.toFixed(2)} L</p>
-                <p class="metric"><strong>Trip-Kosten:</strong> ${data.trip_fuel_cost.toFixed(2)} EUR</p>
+                <p class="metric"><strong>Trip-Kosten (Fahrt):</strong> ${data.trip_fuel_cost.toFixed(2)} EUR</p>
                 <p class="metric"><strong>Bruttoersparnis Tanken:</strong> ${data.gross_savings.toFixed(2)} EUR</p>
                 <p class="metric"><strong>Break-even Distanz:</strong> ${data.break_even_round_trip_km.toFixed(1)} km</p>
-                <p class="explain">${data.explanation}</p>
+                <ul class="detail-list">
+                    <li>Preisvorteil pro Liter: ${priceDiffPerLiter.toFixed(3)} EUR/L</li>
+                    <li>Routenquelle: ${data.route_source}</li>
+                    <li>Interpretation: Nettoersparnis = Bruttoersparnis minus Fahrkosten.</li>
+                </ul>
+                <p class="explain"><strong>Erklaerung:</strong> ${data.explanation}</p>
             `;
         }
 
@@ -288,6 +369,7 @@ def home() -> str:
 
             const payload = {
                 start_location: form.start_location.value,
+                fuel_type: form.fuel_type.value,
                 consumption: Number(form.consumption.value),
                 tank_size: Number(form.tank_size.value),
                 fuel_price_home: form.fuel_price_home.value ? Number(form.fuel_price_home.value) : null,
@@ -329,6 +411,7 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
         start_location=request.start_location,
         manual_home_price=request.fuel_price_home,
         manual_samnaun_price=request.fuel_price_samnaun,
+        fuel_type=request.fuel_type,
     )
 
     result = evaluate_trip(
@@ -345,13 +428,19 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
     explanation_with_sources = (
         f"{result.explanation} "
         f"Price sources: home={prices.home_source}, samnaun={prices.samnaun_source}. "
-        f"Route source: {route.route_source}."
+        f"Route source: {route.route_source}. Fuel type: {request.fuel_type}."
     )
 
     return CalculationResponse(
         worth_it=result.worth_it,
         net_savings=result.net_savings,
         explanation=explanation_with_sources,
+        fuel_type=request.fuel_type,
+        fuel_price_home_used=prices.fuel_price_home,
+        fuel_price_samnaun_used=prices.fuel_price_samnaun,
+        home_price_source=prices.home_source,
+        samnaun_price_source=prices.samnaun_source,
+        route_source=route.route_source,
         round_trip_distance_km=result.round_trip_distance_km,
         trip_fuel_liters=result.trip_fuel_liters,
         trip_fuel_cost=result.trip_fuel_cost,

@@ -41,6 +41,7 @@ My contribution:
 - Documentation structure and project narrative
 
 Example quality check implemented:
+- Related prompts: [07-prompt.md](07-prompt.md), [08-prompt.md](08-prompt.md), [09-prompt.md](09-prompt.md)
 - Case: `start_location=Zams` sometimes returned very low net savings because ENI entries were present but had no live price payload.
 - Check: compared runtime output (`home_source`, `fuel_price_home`, `net_savings`) against expected live-data behavior.
 - Fix: if ENI has no live price, use nearest live-priced station in Zams area before simulated fallback.
@@ -75,6 +76,12 @@ fuel-samnaun-calculator/
 ├── 01-prompt.md
 ├── 02-prompt.md
 ├── 03-prompt.md
+├── 04-prompt.md
+├── 05-prompt.md
+├── 06-prompt.md
+├── 07-prompt.md
+├── 08-prompt.md
+├── 09-prompt.md
 └── requirements.txt
 ```
 
@@ -107,6 +114,7 @@ Request body:
 ```json
 {
   "start_location": "Landeck",
+  "fuel_type": "diesel",
   "consumption": 6.2,
   "tank_size": 55,
   "fuel_price_home": 1.68,
@@ -138,6 +146,8 @@ Example response:
   - If `start_location` is `Zams`: E-Control nearest ENI station near Zams
   - Otherwise: E-Control nearest station around geocoded start location
   - Fallback simulation if no live result is available
+- Supported `fuel_type` values: `diesel`, `benzin95`, `benzin98`
+- Note for `benzin98`: E-Control endpoint is queried with `SUP` (best available proxy for 98 octane on this endpoint).
 - Samnaun SOCAR source priority:
   - Manual input if provided
   - Optional custom endpoint via `SAMNAUN_SOCAR_PRICE_API_URL`

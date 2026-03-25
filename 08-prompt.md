@@ -1,0 +1,1 @@
+bitte den prompt von davor mit dem zams fehler als prompts 7 abspeichern und bei bitte baue in die app (ist es eine app überhaupt jetzt gerade?) ein feld bzw logik ein um zwischen benzin diesel und so weiter also benzin plus und so auch also 95 und 98 oktan auswählen ein feld. diesen prompts als prompt 8 abspeichern. readme zeile 43 als link dazu anfügen

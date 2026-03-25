@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
 
 class CalculationRequest(BaseModel):
     start_location: str = Field(..., min_length=2, max_length=120)
+    fuel_type: Literal["diesel", "benzin95", "benzin98"] = Field(
+        "diesel",
+        description="Fuel type: diesel, benzin95, or benzin98",
+    )
     consumption: float = Field(..., gt=0, description="Vehicle consumption in L/100km")
     tank_size: float = Field(..., gt=0, description="Tank capacity in liters")
     fuel_price_home: Optional[float] = Field(None, gt=0, description="Fuel price at home in EUR/L")
@@ -18,6 +22,12 @@ class CalculationResponse(BaseModel):
     worth_it: bool
     net_savings: float
     explanation: str
+    fuel_type: Literal["diesel", "benzin95", "benzin98"]
+    fuel_price_home_used: float
+    fuel_price_samnaun_used: float
+    home_price_source: str
+    samnaun_price_source: str
+    route_source: str
     round_trip_distance_km: float
     trip_fuel_liters: float
     trip_fuel_cost: float
