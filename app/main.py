@@ -365,7 +365,7 @@ def home() -> str:
 
             <div class="panel">
                 <div id="result" class="result-card">
-                    <p class="hint">Noch keine Berechnung. Form ausfuellen und starten.</p>
+                    <p class="hint">Noch keine Berechnung. Form ausfüllen und starten.</p>
                 </div>
             </div>
         </section>
@@ -373,15 +373,15 @@ def home() -> str:
         <section class="topic-note">
             <h2>Worum geht es hier genau?</h2>
             <p><strong>Bruttoersparnis</strong> bedeutet nur der Preisvorteil beim Tanken: (Preis zuhause minus Preis Samnaun) mal getankte Liter (Tank plus optional Reservekanister).</p>
-            <p><strong>Nettoersparnis</strong> bedeutet Bruttoersparnis minus Kosten fuer die Fahrt nach Samnaun (zusaetzlicher Verbrauch fuer die Strecke plus optional bewertete Zeitkosten).</p>
-            <p><strong>Wichtiger Vergleich:</strong> Dieses Tool vergleicht "ich muss sowieso tanken" gegen "ich tanke stattdessen in Samnaun". Wenn du den ganzen Monat gar nicht faehrst, ist Nicht-Fahren in der Regel finanziell guenstiger als eine extra Tankfahrt.</p>
-            <p><strong>Zeitkosten pro Stunde</strong> ist dein persoenlicher Wert fuer Reisezeit (z. B. entgangene Freizeit oder Arbeitszeit). Bei 0 EUR/h wird nur mit direkten Spritkosten gerechnet, bei hoeheren Werten wird Fahrtzeit als zusaetzlicher Kostenfaktor eingerechnet.</p>
-            <p>Die letzten Jahre waren von volatilen Energie- und Kraftstoffpreisen gepraegt (Nachwirkungen von Pandemiephase, Inflation und geopolitische Konflikte). Solche Unsicherheiten koennen Preisniveaus laenger belasten. Genau deshalb ist eine transparente, datenbasierte Entscheidungshilfe sinnvoll.</p>
-            <p>Fuer Developer ist das ein praxisnahes Beispiel: ein konkretes Kostenproblem mit einer konkreten, nachvollziehbaren Loesung. Solche fachlich verankerten Tools bleiben relevant, weil sie reale Entscheidungen unter Unsicherheit unterstuetzen.</p>
+            <p><strong>Nettoersparnis</strong> bedeutet Bruttoersparnis minus Kosten für die Fahrt nach Samnaun (zusätzlicher Verbrauch für die Strecke plus optional bewertete Zeitkosten).</p>
+            <p><strong>Wichtiger Vergleich:</strong> Dieses Tool vergleicht "ich muss sowieso tanken" gegen "ich tanke stattdessen in Samnaun". Wenn du den ganzen Monat gar nicht fährst, ist Nicht-Fahren in der Regel finanziell günstiger als eine extra Tankfahrt.</p>
+            <p><strong>Zeitkosten pro Stunde</strong> ist dein persönlicher Wert für Reisezeit (z. B. entgangene Freizeit oder Arbeitszeit). Bei 0 EUR/h wird nur mit direkten Spritkosten gerechnet, bei höheren Werten wird Fahrtzeit als zusätzlicher Kostenfaktor eingerechnet.</p>
+            <p>Die letzten Jahre waren von volatilen Energie- und Kraftstoffpreisen geprägt (Nachwirkungen von Pandemiephase, Inflation und geopolitische Konflikte). Solche Unsicherheiten können Preisniveaus länger belasten. Genau deshalb ist eine transparente, datenbasierte Entscheidungshilfe sinnvoll.</p>
+            <p>Für Developer ist das ein praxisnahes Beispiel: ein konkretes Kostenproblem mit einer konkreten, nachvollziehbaren Lösung. Solche fachlich verankerten Tools bleiben relevant, weil sie reale Entscheidungen unter Unsicherheit unterstützen.</p>
             <ul>
                 <li>Formel-Kern: Netto = Brutto - Fahrkosten - Zeitkosten.</li>
-                <li>Reservekanister-Regeln: Oesterreich 10 L, Schweiz 25 L (optional zuschaltbar).</li>
-                <li>Interpretation: Nur positive Nettoersparnis bedeutet echter finanzieller Vorteil gegenueber lokalem Tanken.</li>
+                <li>Reservekanister-Regeln: Österreich 10 L, Schweiz 25 L (optional zuschaltbar).</li>
+                <li>Interpretation: Nur positive Nettoersparnis bedeutet echter finanzieller Vorteil gegenüber lokalem Tanken.</li>
             </ul>
         </section>
     </main>
@@ -404,7 +404,7 @@ def home() -> str:
 
             resultEl.innerHTML = `
                 <span class="badge ${worthItClass}">${worthItText}</span>
-                <h3 class="result-title">Ergebnis fuer ${fuelTypeLabel}</h3>
+                <h3 class="result-title">Ergebnis für ${fuelTypeLabel}</h3>
                 <p class="metric"><strong>Nettoersparnis:</strong> <span style="color:${netClass}; font-weight:700;">${data.net_savings.toFixed(2)} EUR</span></p>
                 <div class="price-grid">
                     <div class="price-card">
@@ -422,7 +422,7 @@ def home() -> str:
                 <p class="metric"><strong>Trip-Fuel:</strong> ${data.trip_fuel_liters.toFixed(2)} L</p>
                 <p class="metric"><strong>Trip-Kosten (Fahrt):</strong> ${data.trip_fuel_cost.toFixed(2)} EUR</p>
                 <p class="metric"><strong>Reservekanister angerechnet:</strong> ${data.reserve_canister_liters_used.toFixed(2)} L</p>
-                <p class="metric"><strong>Gesamt-Tankvolumen fuer Vorteil:</strong> ${data.total_refuel_volume_liters.toFixed(2)} L</p>
+                <p class="metric"><strong>Gesamt-Tankvolumen für Vorteil:</strong> ${data.total_refuel_volume_liters.toFixed(2)} L</p>
                 <p class="metric"><strong>Bruttoersparnis Tanken:</strong> ${data.gross_savings.toFixed(2)} EUR</p>
                 <p class="metric"><strong>Break-even Distanz:</strong> ${data.break_even_round_trip_km.toFixed(1)} km</p>
                 <ul class="detail-list">
@@ -443,7 +443,7 @@ def home() -> str:
 
             const startLocation = (form.start_location.value || "").trim();
             if (startLocation.length < 2) {
-                alert("Bitte einen gueltigen Startort eingeben (mindestens 2 Zeichen).");
+                alert("Bitte einen gültigen Startort eingeben (mindestens 2 Zeichen).");
                 return;
             }
 
@@ -459,7 +459,7 @@ def home() -> str:
                 time_cost_per_hour: Number(form.time_cost_per_hour.value || 0),
             };
 
-            resultEl.innerHTML = '<p class="hint">Berechnung laeuft...</p>';
+            resultEl.innerHTML = '<p class="hint">Berechnung läuft...</p>';
 
             try {
                 const response = await fetch("/calculate", {
@@ -477,7 +477,7 @@ def home() -> str:
                 const data = await response.json();
                 renderResult(data);
             } catch (error) {
-                renderError("Keine Verbindung zur API oder ungueltige Eingaben.");
+                renderError("Keine Verbindung zur API oder ungültige Eingaben.");
             }
         });
     </script>

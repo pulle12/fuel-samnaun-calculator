@@ -1,1 +1,1 @@
-das favicon wird aber immer noch nicht oben in der tableiste angezeigt fixe das bitte. als prompt 13 wieder speichern bitte und in aidd dokumentation und sonstigen dateien wo es vorkommt dranhaengen zu den anderen bitte.
+das favicon wird aber immer noch nicht oben in der tableiste angezeigt fixe das bitte. als prompt 13 wieder speichern bitte und in aidd dokumentation und sonstigen dateien wo es vorkommt dranhängen zu den anderen bitte.
