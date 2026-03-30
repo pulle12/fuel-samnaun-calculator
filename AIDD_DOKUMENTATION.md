@@ -27,6 +27,11 @@ Prompt-Archiv:
 - [prompts/13-prompt.md](prompts/13-prompt.md)
 - [prompts/14-prompt.md](prompts/14-prompt.md)
 - [prompts/15-prompt.md](prompts/15-prompt.md)
+- [prompts/16-prompt.md](prompts/16-prompt.md)
+- [prompts/17-prompt.md](prompts/17-prompt.md)
+- [prompts/18-prompt.md](prompts/18-prompt.md)
+- [prompts/19-prompt.md](prompts/19-prompt.md)
+- [prompts/20-prompt.md](prompts/20-prompt.md)
 
 Begleitdokumente:
 - [PRD.md](PRD.md)
@@ -145,6 +150,21 @@ Wichtiger technischer Punkt:
 - Root Cause: Browser-caching auf `/favicon.ico` zeigte stale Ergebnis.
 - Fix: cache-busting Query-Parameter in HTML plus no-cache Header auf der favicon Route.
 - Ergebnis: Route zeigt korrekt auf `app/static/favicon.ico` und Browser kann aktualisiertes Icon laden.
+
+### 8.4 E-Control SUP Proxy Regression (Zams, Benzin 95 vs 98)
+- Problem: Bei `start_location=Zams` wurden fuer `benzin95` und `benzin98` teils identische ENI-Preise geliefert.
+- Root Cause: E-Control by-address Integration lieferte fuer `SUP` den Labelwert `Super 95`; ein SUP-Proxy fuer `benzin98` fuehrte damit zu 95/98-Verwechslung.
+- Check: Live-API-Verhalten geprueft (SUP-Label `Super 95`, weitere FuelType-Codes abgelehnt), danach Reproduktions- und Regressionstest umgesetzt.
+- Fix: SUP-Proxy fuer `benzin98` entfernt; `benzin98` wird in dieser Integration nicht mehr ueber E-Control aufgeloest, sondern ueber den 98-spezifischen Fallback (oder manuelle Eingabe).
+- Absicherung: Neuer Test in [tests/test_fuel_api.py](tests/test_fuel_api.py).
+
+### 8.5 Benzin98 API-Quelle statt Beispiel-URL
+- Problem: Fuer `benzin98` war eine beispielhafte URL-Konfiguration nicht als echte produktive Quelle geeignet; dadurch griff die Aufloesung haeufig auf Fallbackwerte.
+- Root Cause: Public E-Control Search-Endpunkte liefern im Integrationskontext fuer Benzin nur `SUP` (Super 95); gleichzeitig war kein authentifizierter 98-spezifischer API-Pfad in der Prioritaet aktiv.
+- Check: Endpunktverhalten verifiziert (public search vs. auth-required routes), danach Prioritaetskette mit echtem API-Pfad implementiert.
+- Fix: Neue Prioritaet fuer `benzin98` Home-Preis: manuell -> authentifizierter E-Control Endpoint (`/sprit/1.0/gas-stations/by-address`) -> aus E-Control-SUP95 abgeleiteter 98-Wert (konfigurierbarer Aufschlag) -> optionaler benutzerdefinierter Endpoint (`HOME_BENZIN98_PRICE_API_URL`) -> Fallback.
+- Absicherung: Neue Tests in [tests/test_fuel_api.py](tests/test_fuel_api.py) fuer authentifizierte und abgeleitete `benzin98`-Aufloesung.
+- Klarstellung: Quellen mit Praefix `econtrol_derived_benzin98_from_sup95_*` sind explizit geschaetzte Werte (SUP95 Live-API + Aufschlag) und keine direkt gelieferten Super-98-API-Felder. (Schätzung erfolgt in fuel_api.py:369-373)
 
 ## 9. Konfiguration
 - `GOOGLE_MAPS_API_KEY`: aktiviert Google-Routing

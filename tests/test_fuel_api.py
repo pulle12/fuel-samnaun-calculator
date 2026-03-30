@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from app.services import fuel_api
 
 
@@ -98,6 +100,137 @@ def test_resolve_fuel_prices_supports_benzin98_simulation(monkeypatch) -> None:
     )
 
     assert prices.fuel_price_home == fuel_api.SIMULATED_PRICES_EUR_PER_L["benzin98"]["austria"]
+
+
+def test_resolve_fuel_prices_zams_benzin98_is_derived_from_sup95_when_needed(monkeypatch) -> None:
+    monkeypatch.setattr(
+        fuel_api,
+        "_fetch_econtrol_stations_authenticated",
+        lambda latitude, longitude, fuel_type_code, username, password: None,
+    )
+
+    def fake_fetch_econtrol_stations(latitude: float, longitude: float, fuel_type: str):
+        assert fuel_type == "benzin95"
+        return [
+            {
+                "name": "ENI Zams",
+                "distance": 0.1,
+                "prices": [{"fuelType": "SUP", "amount": 1.83, "label": "Super 95"}],
+            }
+        ]
+
+    monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", fake_fetch_econtrol_stations)
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
+
+    prices = fuel_api.resolve_fuel_prices(
+        start_location="Zams",
+        manual_home_price=None,
+        manual_samnaun_price=None,
+        fuel_type="benzin98",
+    )
+
+    assert prices.fuel_price_home == pytest.approx(1.99, abs=0.001)
+    assert prices.home_source.startswith("econtrol_derived_benzin98_from_sup95_eni_zams:")
+
+
+def test_resolve_fuel_prices_benzin98_uses_configured_api(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "HOME_BENZIN98_PRICE_API_URL",
+        "https://example.test/price?lat={lat}&lon={lon}&location={location}",
+    )
+    monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", lambda latitude, longitude, fuel_type: None)
+    monkeypatch.setattr(fuel_api, "_geocode_location", lambda location: (47.1569, 10.5897))
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
+
+    captured: dict[str, str] = {}
+
+    def fake_fetch_price_from_json_endpoint(
+        url: str,
+        timeout_seconds: float = 3.0,
+        value_keys: tuple[str, ...] = ("price_eur_per_l", "price", "diesel"),
+    ) -> float:
+        captured["url"] = url
+        return 2.119
+
+    monkeypatch.setattr(fuel_api, "_fetch_price_from_json_endpoint", fake_fetch_price_from_json_endpoint)
+
+    prices = fuel_api.resolve_fuel_prices(
+        start_location="Zams",
+        manual_home_price=None,
+        manual_samnaun_price=None,
+        fuel_type="benzin98",
+    )
+
+    assert prices.fuel_price_home == 2.119
+    assert prices.home_source == "home_benzin98_live_api"
+    assert "lat=47.156900" in captured["url"]
+    assert "lon=10.589700" in captured["url"]
+
+
+def test_resolve_fuel_prices_benzin98_uses_authenticated_econtrol_when_available(monkeypatch) -> None:
+    monkeypatch.setenv("ECONTROL_USERNAME", "demo-user")
+    monkeypatch.setenv("ECONTROL_PASSWORD", "demo-pass")
+    monkeypatch.setenv("ECONTROL_BENZIN98_FUEL_TYPES", "SUP98,SUP")
+
+    monkeypatch.setattr(fuel_api, "_geocode_location", lambda location: (47.1569, 10.5897))
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
+
+    def fake_auth_fetch(latitude: float, longitude: float, fuel_type_code: str, username: str, password: str):
+        if fuel_type_code == "SUP98":
+            return [
+                {
+                    "name": "ENI Zams",
+                    "distance": 0.1,
+                    "prices": [
+                        {"fuelType": "SUP98", "label": "Super 98", "amount": 2.229},
+                    ],
+                }
+            ]
+        return None
+
+    monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations_authenticated", fake_auth_fetch)
+
+    prices = fuel_api.resolve_fuel_prices(
+        start_location="Zams",
+        manual_home_price=None,
+        manual_samnaun_price=None,
+        fuel_type="benzin98",
+    )
+
+    assert prices.fuel_price_home == 2.229
+    assert prices.home_source.startswith("econtrol_auth_eni_benzin98:")
+
+
+def test_resolve_fuel_prices_benzin98_derived_from_nearest_sup95(monkeypatch) -> None:
+    monkeypatch.setattr(
+        fuel_api,
+        "_fetch_econtrol_stations_authenticated",
+        lambda latitude, longitude, fuel_type_code, username, password: None,
+    )
+    monkeypatch.setattr(fuel_api, "_geocode_location", lambda location: (47.2, 10.6))
+    monkeypatch.setattr(fuel_api, "_fetch_live_samnaun_price", lambda fuel_type: None)
+
+    def fake_fetch_econtrol_stations(latitude: float, longitude: float, fuel_type: str):
+        assert fuel_type == "benzin95"
+        return [
+            {
+                "name": "Station A",
+                "distance": 1.2,
+                "prices": [{"fuelType": "SUP", "amount": 1.90, "label": "Super 95"}],
+            }
+        ]
+
+    monkeypatch.setattr(fuel_api, "_fetch_econtrol_stations", fake_fetch_econtrol_stations)
+
+    prices = fuel_api.resolve_fuel_prices(
+        start_location="Landeck",
+        manual_home_price=None,
+        manual_samnaun_price=None,
+        fuel_type="benzin98",
+    )
+
+    assert prices.fuel_price_home == pytest.approx(2.06, abs=0.001)
+    assert prices.home_source.startswith("econtrol_derived_benzin98_from_sup95_nearest:")
 
 
 def test_extract_hangl_price_by_fuel_type_parses_chf_values() -> None:

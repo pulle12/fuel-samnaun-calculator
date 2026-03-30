@@ -4,6 +4,7 @@ import os
 import re
 from dataclasses import dataclass
 from typing import Literal, Optional
+from urllib.parse import quote_plus
 
 import requests
 
@@ -13,33 +14,35 @@ FuelType = Literal["diesel", "benzin95", "benzin98"]
 # Das sind meine Fallback-Daten falls keine API geht. Kommentar selbst geschrieben.
 SIMULATED_PRICES_EUR_PER_L: dict[FuelType, dict[str, float]] = {
     "diesel": {
-        "austria": 1.62,
-        "samnaun_socar": 1.34,
-        "eni_zams": 1.59,
+        "austria": 1.74,
+        "samnaun_socar": 1.47,
+        "eni_zams": 1.71,
     },
     "benzin95": {
-        "austria": 1.74,
-        "samnaun_socar": 1.48,
-        "eni_zams": 1.69,
+        "austria": 1.87,
+        "samnaun_socar": 1.59,
+        "eni_zams": 1.83,
     },
     "benzin98": {
-        "austria": 1.92,
-        "samnaun_socar": 1.66,
-        "eni_zams": 1.87,
+        "austria": 2.04,
+        "samnaun_socar": 1.76,
+        "eni_zams": 1.99,
     },
 }
 
 DEFAULT_TIMEOUT_SECONDS = 4.0
 NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 ECONTROL_SEARCH_URL = "https://api.e-control.at/sprit/1.0/search/gas-stations/by-address"
+ECONTROL_AUTH_SEARCH_URL = "https://api.e-control.at/sprit/1.0/gas-stations/by-address"
 HANGL_MOBILITY_URL = "https://www.hangl-mobility.ch/"
 INTERZEGG_TANKSTELLEN_URL = "https://www.interzegg.ch/de/tankstellen"
 
-# E-Control supports DIE and SUP on this endpoint. For 98 octane we use SUP as best available proxy.
-ECONTROL_FUEL_TYPE_BY_APP: dict[FuelType, str] = {
+# E-Control by-address endpoint provides DIE and SUP in this integration context.
+# For benzin98 we intentionally avoid SUP proxy usage to prevent 95/98 price conflation.
+ECONTROL_FUEL_TYPE_BY_APP: dict[FuelType, Optional[str]] = {
     "diesel": "DIE",
     "benzin95": "SUP",
-    "benzin98": "SUP",
+    "benzin98": None,
 }
 
 # ENI station in Zams area (used as priority home source for start_location=zams).
@@ -202,15 +205,51 @@ def _geocode_location(location: str) -> Optional[tuple[float, float]]:
 
 
 def _fetch_econtrol_stations(latitude: float, longitude: float, fuel_type: FuelType) -> Optional[list[dict]]:
+    econtrol_fuel_type = ECONTROL_FUEL_TYPE_BY_APP[fuel_type]
+    if econtrol_fuel_type is None:
+        return None
+
     params = {
         "latitude": latitude,
         "longitude": longitude,
-        "fuelType": ECONTROL_FUEL_TYPE_BY_APP[fuel_type],
+        "fuelType": econtrol_fuel_type,
     }
     headers = {"User-Agent": "samnaun-fuel-checker/0.3"}
 
     try:
         response = requests.get(ECONTROL_SEARCH_URL, params=params, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError):
+        return None
+
+    if isinstance(payload, list):
+        return payload
+    return None
+
+
+def _fetch_econtrol_stations_authenticated(
+    latitude: float,
+    longitude: float,
+    fuel_type_code: str,
+    username: str,
+    password: str,
+) -> Optional[list[dict]]:
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "fuelType": fuel_type_code,
+    }
+    headers = {"User-Agent": "samnaun-fuel-checker/0.3"}
+
+    try:
+        response = requests.get(
+            ECONTROL_AUTH_SEARCH_URL,
+            params=params,
+            headers=headers,
+            auth=(username, password),
+            timeout=DEFAULT_TIMEOUT_SECONDS,
+        )
         response.raise_for_status()
         payload = response.json()
     except (requests.RequestException, ValueError):
@@ -227,6 +266,8 @@ def _extract_station_price(station: dict, fuel_type: FuelType) -> Optional[float
         return None
 
     expected_econtrol_fuel_type = ECONTROL_FUEL_TYPE_BY_APP[fuel_type]
+    if expected_econtrol_fuel_type is None:
+        return None
 
     for entry in prices:
         if not isinstance(entry, dict):
@@ -273,28 +314,63 @@ def _pick_station_price(
     return price, name
 
 
-def fetch_fuel_price_from_api(
-    location: str,
-    fuel_type: str = "diesel",
-    timeout_seconds: float = 2.0,
-) -> Optional[float]:
-    """
-    Example external API hook.
-    Returns None when API data is unavailable so callers can fall back to simulation.
-    """
-    url = "https://example.com/fuel-prices"
-    params = {"location": location, "fuel_type": fuel_type}
-
-    try:
-        response = requests.get(url, params=params, timeout=timeout_seconds)
-        response.raise_for_status()
-        payload = response.json()
-        price = float(payload["price_eur_per_l"])
-        if price <= 0:
-            return None
-        return price
-    except (requests.RequestException, KeyError, TypeError, ValueError):
+def _extract_station_price_98(station: dict) -> Optional[float]:
+    prices = station.get("prices")
+    if not isinstance(prices, list):
         return None
+
+    for entry in prices:
+        if not isinstance(entry, dict):
+            continue
+
+        label = str(entry.get("label", "")).lower()
+        entry_fuel_type = str(entry.get("fuelType", "")).upper()
+        if "98" not in label and "98" not in entry_fuel_type:
+            continue
+
+        parsed = _safe_float(entry.get("amount"))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _pick_station_price_98(
+    stations: list[dict],
+    brand_contains: Optional[str] = None,
+) -> Optional[tuple[float, str]]:
+    selected: list[tuple[float, float, str]] = []
+
+    for station in stations:
+        if not isinstance(station, dict):
+            continue
+
+        name = str(station.get("name", "")).strip()
+        if not name:
+            continue
+
+        if brand_contains and brand_contains.lower() not in name.lower():
+            continue
+
+        price = _extract_station_price_98(station)
+        if price is None:
+            continue
+
+        distance = _safe_float(station.get("distance")) or 999999.0
+        selected.append((distance, price, name))
+
+    if not selected:
+        return None
+
+    selected.sort(key=lambda item: item[0])
+    _, price, name = selected[0]
+    return price, name
+
+
+def _derive_benzin98_from_sup95_price(sup95_price: float) -> float:
+    premium_delta = _safe_float(os.getenv("HOME_BENZIN98_PREMIUM_DELTA_EUR", "0.16"))
+    if premium_delta is None:
+        premium_delta = 0.16
+    return round(sup95_price + premium_delta, 3)
 
 
 def get_simulated_fuel_price(location: str, fuel_type: FuelType = "diesel") -> float:
@@ -312,6 +388,86 @@ def _resolve_home_price(
 ) -> tuple[float, str]:
     if manual_home_price is not None:
         return manual_home_price, "manual_input"
+
+    # For benzin98, prefer explicit 98 APIs first; otherwise derive an estimate from live SUP95.
+    if fuel_type == "benzin98":
+        is_zams = start_location.strip().lower() == "zams"
+        search_coords = (ZAMS_LAT, ZAMS_LON) if is_zams else _geocode_location(start_location)
+
+        econtrol_username = os.getenv("ECONTROL_USERNAME", "").strip()
+        econtrol_password = os.getenv("ECONTROL_PASSWORD", "").strip()
+        econtrol_benzin98_fuel_types = [
+            code.strip()
+            for code in os.getenv("ECONTROL_BENZIN98_FUEL_TYPES", "SUP_PLUS,SUP98,ROZ98,PLUS,SUP").split(",")
+            if code.strip()
+        ]
+
+        if econtrol_username and econtrol_password and search_coords is not None:
+            lat, lon = search_coords
+            for fuel_code in econtrol_benzin98_fuel_types:
+                stations = _fetch_econtrol_stations_authenticated(
+                    latitude=lat,
+                    longitude=lon,
+                    fuel_type_code=fuel_code,
+                    username=econtrol_username,
+                    password=econtrol_password,
+                )
+                if not stations:
+                    continue
+
+                if is_zams:
+                    eni_choice = _pick_station_price_98(stations, brand_contains="eni")
+                    if eni_choice is not None:
+                        price, station_name = eni_choice
+                        return price, f"econtrol_auth_eni_benzin98:{station_name}:{fuel_code}"
+
+                nearest_choice = _pick_station_price_98(stations)
+                if nearest_choice is not None:
+                    price, station_name = nearest_choice
+                    return price, f"econtrol_auth_nearest_benzin98:{station_name}:{fuel_code}"
+
+        if search_coords is not None:
+            lat, lon = search_coords
+            sup_stations = _fetch_econtrol_stations(lat, lon, fuel_type="benzin95")
+            if sup_stations:
+                if is_zams:
+                    eni_sup_choice = _pick_station_price(sup_stations, fuel_type="benzin95", brand_contains="eni")
+                    if eni_sup_choice is not None:
+                        sup_price, station_name = eni_sup_choice
+                        derived_price = _derive_benzin98_from_sup95_price(sup_price)
+                        return derived_price, f"econtrol_derived_benzin98_from_sup95_eni_zams:{station_name}"
+
+                nearest_sup_choice = _pick_station_price(sup_stations, fuel_type="benzin95")
+                if nearest_sup_choice is not None:
+                    sup_price, station_name = nearest_sup_choice
+                    derived_price = _derive_benzin98_from_sup95_price(sup_price)
+                    return derived_price, f"econtrol_derived_benzin98_from_sup95_nearest:{station_name}"
+
+        benzin98_api_url_template = os.getenv("HOME_BENZIN98_PRICE_API_URL", "").strip()
+        if benzin98_api_url_template and search_coords is not None:
+            lat, lon = search_coords
+            formatted_url = benzin98_api_url_template.format(
+                location=quote_plus(start_location.strip()),
+                lat=f"{lat:.6f}",
+                lon=f"{lon:.6f}",
+            )
+            benzin98_price = _fetch_price_from_json_endpoint(
+                formatted_url,
+                value_keys=(
+                    "price_eur_per_l",
+                    "price",
+                    "benzin98",
+                    "super98",
+                    "premium98",
+                    "amount",
+                ),
+            )
+            if benzin98_price is not None:
+                return benzin98_price, "home_benzin98_live_api"
+
+        if is_zams:
+            return get_simulated_fuel_price("eni_zams", fuel_type=fuel_type), "eni_zams_fallback_98"
+        return get_simulated_fuel_price("austria", fuel_type=fuel_type), "austria_fallback_98"
 
     is_zams = start_location.strip().lower() == "zams"
     if is_zams:

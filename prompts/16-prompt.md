@@ -1,0 +1,3 @@
+# Prompt 16
+
+ich habe einen weiteren fehler entdeckt der auch als quality check gilt das heißt speichere diesen wieder bitte in README und AIDD DOKUMENTATION in den jeweils dafür vorgesehenen bereich hinein bitte. und den prompt auch wieder abspeichern wie die anderen und vermekren. problen: wenn ich zams und super 95 auswähle wird von der e control bei der eni der gleiche preis geliefert wie bei super 98 was auf keinen fall sein kann. bitte bessere das aus indem du auch in der offiziellen api doku der e control nachliest.

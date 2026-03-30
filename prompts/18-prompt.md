@@ -1,0 +1,3 @@
+# Prompt 18
+
+jetzt steht da aber eine url von example.com drin für die super 98 preise. das wird ja nicht gehen oder? bessere das ggf aus weil das ist ja keine echte api oder und nicht auf österreich/tirol/zams zugeschnitten. speichere das bitte wieder als prompt ab und als aidd quality check. weil wenn ich es aus teste kommt 1,99 also die fallback daten die wir gerade änderten zwar aber ich nicht als quelle will eigentlich.

@@ -59,6 +59,21 @@ Additional quality check:
 - Fix: cache-busting query in HTML icon links plus explicit `Cache-Control` headers on `/favicon.ico` response.
 - Acceptance: favicon endpoint resolves to `app/static/favicon.ico` with `image/x-icon` content type.
 
+Additional quality check:
+- Related prompts: [prompts/16-prompt.md](prompts/16-prompt.md)
+- Case: for `start_location=Zams` with `fuel_type=benzin95` and `fuel_type=benzin98`, ENI home price could become identical because the E-Control by-address query value `SUP` corresponds to Super 95.
+- Check: validated endpoint behavior with live API calls and response labels (`SUP` -> `Super 95`), and confirmed unsupported fuelType variants are rejected by API validation.
+- Fix: removed SUP proxy for `benzin98`; in this integration `benzin98` now uses deterministic 98-specific fallback instead of E-Control SUP.
+- Acceptance: regression test added in `tests/test_fuel_api.py` ensuring `benzin98` in Zams does not use E-Control SUP proxy.
+
+Additional quality check:
+- Related prompts: [prompts/18-prompt.md](prompts/18-prompt.md), [prompts/19-prompt.md](prompts/19-prompt.md), [prompts/20-prompt.md](prompts/20-prompt.md)
+- Case: configured example-style URL for `benzin98` was not a real Austria/Tirol-focused source and led to fallback usage (`eni_zams_fallback_98`) instead of a live API source.
+- Check: endpoint behavior was revalidated; public E-Control `search/*` endpoint still exposes `SUP` as Super 95 only, while authenticated E-Control API routes exist and require credentials.
+- Fix: removed misleading example hook and implemented a real API priority for `benzin98`: authenticated E-Control endpoint (`/sprit/1.0/gas-stations/by-address`) with credentials, then SUP95-based derived 98 estimate from live E-Control data, then optional custom endpoint (`HOME_BENZIN98_PRICE_API_URL`), then fallback.
+- Acceptance: regression tests added for authenticated and derived `benzin98` resolution paths in `tests/test_fuel_api.py`.
+- Clarification: source values like `econtrol_derived_benzin98_from_sup95_*` are estimates (derived from live SUP95 API data plus configurable premium delta), not direct 98-octane API price fields. (Estimation is done in fuel_api.py:369-373)
+
 AI contribution:
 - Draft implementation of modules and API wiring
 - Iterative code changes based on prompt updates
@@ -97,7 +112,14 @@ fuel-samnaun-calculator/
 │   ├── 10-prompt.md
 │   ├── 11-prompt.md
 │   ├── 12-prompt.md
-│   └── 13-prompt.md
+│   ├── 13-prompt.md
+│   ├── 14-prompt.md
+│   ├── 15-prompt.md
+│   ├── 16-prompt.md
+│   ├── 17-prompt.md
+│   ├── 18-prompt.md
+│   ├── 19-prompt.md
+│   └── 20-prompt.md
 └── requirements.txt
 ```
 
@@ -173,7 +195,13 @@ Example response:
   - Otherwise: E-Control nearest station around geocoded start location
   - Fallback simulation if no live result is available
 - Supported `fuel_type` values: `diesel`, `benzin95`, `benzin98`
-- Note for `benzin98`: E-Control endpoint is queried with `SUP` (best available proxy for 98 octane on this endpoint).
+- Note for `benzin98`: E-Control by-address data is not used to avoid conflating Super 95 (`SUP`) with 98-octane prices.
+- `benzin98` home price source priority:
+  - Manual input if provided
+  - Authenticated E-Control endpoint (`/sprit/1.0/gas-stations/by-address`) when credentials are configured
+  - Derived estimate from live E-Control SUP95 data (`home_source` starts with `econtrol_derived_benzin98_from_sup95_...`)
+  - Configured external API via `HOME_BENZIN98_PRICE_API_URL` (supports placeholders `{location}`, `{lat}`, `{lon}`)
+  - Deterministic fallback values
 - Samnaun SOCAR source priority:
   - Manual input if provided
   - Official Samnaun sources via published website data parsing:
@@ -207,3 +235,7 @@ Example response:
 - `GOOGLE_MAPS_API_KEY`: enables Google Distance Matrix routing.
 - `SAMNAUN_SOCAR_PRICE_API_URL`: optional JSON endpoint for live SOCAR Samnaun price.
 - `SAMNAUN_BP_PRICE_API_URL`: legacy alias, still supported for backward compatibility.
+- `HOME_BENZIN98_PRICE_API_URL`: optional endpoint for home-side Super 98 price lookup.
+- `ECONTROL_USERNAME`: username for authenticated E-Control endpoints.
+- `ECONTROL_PASSWORD`: password for authenticated E-Control endpoints.
+- `ECONTROL_BENZIN98_FUEL_TYPES`: ordered list of benzin98 fuelType candidates for authenticated endpoint lookup (default: `SUP_PLUS,SUP98,ROZ98,PLUS,SUP`).
