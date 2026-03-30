@@ -8,6 +8,7 @@ from app.calculator import (
     calculate_trip_fuel_cost,
     calculate_trip_fuel_liters,
     evaluate_trip,
+    get_reserve_canister_liters,
 )
 
 
@@ -26,6 +27,17 @@ def test_calculate_gross_savings_positive() -> None:
 def test_calculate_gross_savings_no_price_advantage() -> None:
     assert calculate_gross_savings(55.0, 1.35, 1.35) == pytest.approx(0.0)
     assert calculate_gross_savings(55.0, 1.30, 1.35) == pytest.approx(0.0)
+
+
+def test_get_reserve_canister_liters_by_rule() -> None:
+    assert get_reserve_canister_liters(False, "austria") == pytest.approx(0.0)
+    assert get_reserve_canister_liters(True, "austria") == pytest.approx(10.0)
+    assert get_reserve_canister_liters(True, "switzerland") == pytest.approx(25.0)
+
+
+def test_calculate_gross_savings_with_reserve_canister() -> None:
+    # 55L tank + 10L reserve canister with 0.35 EUR/L price difference.
+    assert calculate_gross_savings(55.0, 1.70, 1.35, reserve_canister_liters=10.0) == pytest.approx(22.75)
 
 
 def test_calculate_break_even_round_trip_km() -> None:
@@ -79,6 +91,22 @@ def test_evaluate_trip_with_time_cost() -> None:
 
     assert result.trip_fuel_cost == pytest.approx(12.24)
     assert result.net_savings == pytest.approx(-42.99, abs=0.01)
+
+
+def test_evaluate_trip_uses_reserve_canister_rule() -> None:
+    result = evaluate_trip(
+        round_trip_distance_km=120.0,
+        consumption_l_per_100km=6.0,
+        tank_size_liters=55.0,
+        fuel_price_home=1.70,
+        fuel_price_samnaun=1.35,
+        include_reserve_canister=True,
+        reserve_canister_rule="austria",
+    )
+
+    assert result.reserve_canister_liters_used == pytest.approx(10.0)
+    assert result.total_refuel_volume_liters == pytest.approx(65.0)
+    assert result.gross_savings == pytest.approx(22.75, abs=0.01)
 
 
 def test_evaluate_trip_break_even_zero_when_no_price_difference() -> None:

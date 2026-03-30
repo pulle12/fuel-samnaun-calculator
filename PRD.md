@@ -21,6 +21,7 @@ Samnaun Fuel Checker gives a clear, explainable answer to one question: Is drivi
   - Fuel needed for trip
   - Fuel trip cost
   - Gross savings from lower Samnaun price
+  - Optional reserve canister volume according to selected rule set (Austria 10 L, Switzerland 25 L)
   - Net savings or loss
   - Break-even round-trip distance
 - API response including:

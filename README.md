@@ -37,6 +37,7 @@ My contribution:
 - Architecture and fallback strategy decisions
 - Validation of outputs, testing strategy, and acceptance checks
 - Documentation structure and project narrative
+- Review of all AI-generated code for correctness and maintainability by clicking on "Behalten" (english: "Keep") or "Rückgängig" (english: "Revert") in the window popups after each code generation step.
 
 Example quality checks implemented:
 - Related prompts: [prompts/07-prompt.md](prompts/07-prompt.md), [prompts/08-prompt.md](prompts/08-prompt.md), [prompts/09-prompt.md](prompts/09-prompt.md)
@@ -132,6 +133,8 @@ Request body:
   "fuel_type": "diesel",
   "consumption": 6.2,
   "tank_size": 55,
+  "include_reserve_canister": false,
+  "reserve_canister_rule": "austria",
   "fuel_price_home": 1.68,
   "fuel_price_samnaun": 1.34,
   "time_cost_per_hour": 20
@@ -149,11 +152,19 @@ Example response:
   "trip_fuel_liters": 7.44,
   "trip_fuel_cost": 12.5,
   "gross_savings": 18.7,
-  "break_even_round_trip_km": 69.2
+  "break_even_round_trip_km": 69.2,
+  "reserve_canister_liters_used": 0.0,
+  "total_refuel_volume_liters": 55.0
 }
 ```
 
 ## Notes
+
+- Optional reserve canister logic can be included in gross savings:
+  - `reserve_canister_rule="austria"` -> 10 L
+  - `reserve_canister_rule="switzerland"` -> 25 L
+  - If disabled (`include_reserve_canister=false`), 0 L are added.
+- Rule background (as stated by Samnaun tourism information): besides full tank, additional reserve fuel transport is possible with country-specific limits.
 
 - Distance source priority: Google Distance Matrix (if `GOOGLE_MAPS_API_KEY` is set) -> OSRM open routing -> internal fallback map.
 - Home fuel source priority:
@@ -175,11 +186,21 @@ Example response:
 
 ## Known Limitations
 
-- Public data services (e.g., OSRM/Nominatim) may be rate-limited or temporarily unavailable.
+- Public data services may be rate-limited or temporarily unavailable.
+- Nominatim policy limits heavy use and states an absolute maximum of about 1 request/second on the public endpoint.
+- Google Distance Matrix uses quota/billing limits (for example documented element/request limits); configuration is project-specific in Google Cloud.
+- The public OSRM demo server is community provided and should not be treated as unlimited production infrastructure.
 - Google routing is optional and requires a valid API key and billing-enabled account.
 - The exact SOCAR Samnaun live price is only available if a dedicated endpoint is configured.
 - Official Samnaun price pages can change layout; parser resilience is improved but not guaranteed forever.
 - Fuel station naming and matching (e.g., ENI in Zams) depends on third-party API data quality.
+
+## API-Limit Notes by Service
+
+- Google Distance Matrix: quota and billing controlled via Google Cloud project settings (documented per-request and per-minute limits).
+- Nominatim (public OSM endpoint): strict usage policy with low-rate expectations and valid identifying User-Agent requirement.
+- OSRM public demo endpoint: no SLA for heavy production usage; treat as best-effort and keep fallback active.
+- E-Control Sprit API: endpoint may enforce access restrictions/availability constraints; this app therefore keeps deterministic fallback prices.
 
 ## Optional Environment Variables
 

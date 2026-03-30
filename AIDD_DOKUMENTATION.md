@@ -6,6 +6,7 @@ Diese Datei dokumentiert den aktuellen Stand des Projekts aus AIDD-Sicht (AI-Dri
 - welche Technologien und Datenquellen genutzt werden,
 - wie Daten verarbeitet werden,
 - welche Quality-Checks und Regression-Fixes eingebaut wurden.
+**Anmerkung**: Diese Dokumentation ist nicht als Nutzer- oder Entwicklerhandbuch gedacht, sondern als transparente Darstellung des Entwicklungsprozesses und der getroffenen Entscheidungen im Kontext von AI-gestützter Entwicklung. Dazu überschneidet sie sich teilweise mit Inhalten aus README.md und PRD.md, bietet aber zusätzlich Einblicke in die AIDD-spezifischen Aspekte und ist dazu auf Deutsch verfasst im Gegensatz zu den englischen Dokumenten.
 
 ## 2. AIDD-Workflow im Projekt
 Das Projekt wurde in mehreren Prompt-Iterationen erweitert. Jede Iteration hat entweder neue Features, bessere Datenqualitaet oder bessere Transparenz eingefuehrt.
@@ -24,6 +25,8 @@ Prompt-Archiv:
 - [prompts/11-prompt.md](prompts/11-prompt.md)
 - [prompts/12-prompt.md](prompts/12-prompt.md)
 - [prompts/13-prompt.md](prompts/13-prompt.md)
+- [prompts/14-prompt.md](prompts/14-prompt.md)
+- [prompts/15-prompt.md](prompts/15-prompt.md)
 
 Begleitdokumente:
 - [PRD.md](PRD.md)
@@ -49,6 +52,10 @@ Begleitdokumente:
 
 ### 4.1 Kernlogik
 - [app/calculator.py](app/calculator.py): reine Berechnungslogik (trip cost, gross/net savings, break-even)
+- Erweitert um optionale Reservekanister-Logik fuer Bruttoersparnis:
+1. deaktiviert: +0 L
+2. Regel Österreich: +10 L
+3. Regel Schweiz: +25 L
 
 ### 4.2 Datenmodelle
 - [app/models.py](app/models.py): Eingabe-/Ausgabe-Schemas inkl. fuel_type (`diesel`, `benzin95`, `benzin98`)
@@ -146,6 +153,9 @@ Wichtiger technischer Punkt:
 
 ## 10. Grenzen des aktuellen Ansatzes
 - Externe Websites/APIs koennen Rate Limits oder Struktur-Aenderungen haben.
+- Nominatim Public Endpoint hat eine strikte Usage Policy (niedrige Request-Rate, identifizierbarer User-Agent, Caching).
+- Google Distance Matrix arbeitet mit projektbezogenen Quotas/Billing-Limits.
+- Public OSRM ist Best-Effort ohne harte Verfuegbarkeitszusagen fuer produktive Last.
 - HTML-Scraping hat kein garantiertes API-Vertragsniveau.
 - Deshalb bleibt eine transparente Fallback-Strategie zwingend.
 

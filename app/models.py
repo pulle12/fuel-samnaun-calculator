@@ -13,6 +13,14 @@ class CalculationRequest(BaseModel):
     )
     consumption: float = Field(..., gt=0, description="Vehicle consumption in L/100km")
     tank_size: float = Field(..., gt=0, description="Tank capacity in liters")
+    include_reserve_canister: bool = Field(
+        False,
+        description="Include legal reserve canister fuel volume in gross savings calculation",
+    )
+    reserve_canister_rule: Literal["austria", "switzerland"] = Field(
+        "austria",
+        description="Rule set for legal reserve canister volume (austria=10L, switzerland=25L)",
+    )
     fuel_price_home: Optional[float] = Field(None, gt=0, description="Fuel price at home in EUR/L")
     fuel_price_samnaun: Optional[float] = Field(None, gt=0, description="Fuel price in Samnaun in EUR/L")
     time_cost_per_hour: float = Field(0.0, ge=0, description="Optional value of travel time in EUR/h")
@@ -33,3 +41,5 @@ class CalculationResponse(BaseModel):
     trip_fuel_cost: float
     gross_savings: float
     break_even_round_trip_km: float
+    reserve_canister_liters_used: float
+    total_refuel_volume_liters: float

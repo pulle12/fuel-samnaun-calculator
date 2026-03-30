@@ -260,6 +260,33 @@ def home() -> str:
             font-size: 0.95rem;
         }
 
+        .topic-note {
+            border-top: 1px solid rgba(31, 42, 46, 0.08);
+            background: linear-gradient(180deg, #fffdf8, #f7f2e8);
+            padding: 22px;
+        }
+
+        .topic-note h2 {
+            margin: 0 0 10px;
+            font-size: 1.1rem;
+            color: var(--ink);
+        }
+
+        .topic-note p {
+            margin: 8px 0;
+            color: var(--muted);
+            line-height: 1.45;
+            font-size: 0.94rem;
+        }
+
+        .topic-note ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            color: var(--muted);
+            line-height: 1.45;
+            font-size: 0.94rem;
+        }
+
         @media (max-width: 860px) {
             .content { grid-template-columns: 1fr; }
             .panel + .panel { border-left: 0; border-top: 1px solid rgba(31, 42, 46, 0.08); }
@@ -296,8 +323,24 @@ def home() -> str:
                     </div>
 
                     <div class="field">
-                        <label for="tank_size">Tankgroesse (L)</label>
+                        <label for="tank_size">Tankgröße (L)</label>
                         <input id="tank_size" name="tank_size" type="number" step="0.1" min="1" value="55" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="include_reserve_canister">Reservekanister einrechnen</label>
+                        <select id="include_reserve_canister" name="include_reserve_canister">
+                            <option value="false" selected>Nein</option>
+                            <option value="true">Ja</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="reserve_canister_rule">Reservekanister-Regel</label>
+                        <select id="reserve_canister_rule" name="reserve_canister_rule">
+                            <option value="austria" selected>Österreich (10 L)</option>
+                            <option value="switzerland">Schweiz (25 L)</option>
+                        </select>
                     </div>
 
                     <div class="field">
@@ -316,7 +359,7 @@ def home() -> str:
                     </div>
 
                     <button type="submit">Berechnung starten</button>
-                    <p class="hint">Tipp: Leere Preisfelder nutzen Live-/Fallback-Preise. Bei Ort Zams wird fuer zuhause bevorzugt ENI Zams verwendet.</p>
+                    <p class="hint">Tipp: Leere Preisfelder nutzen Live-/Fallback-Preise. Bei Ort Zams wird für zuhause bevorzugt ENI Zams verwendet. Reservekanister: 10 L (AT) oder 25 L (CH).</p>
                 </form>
             </div>
 
@@ -325,6 +368,21 @@ def home() -> str:
                     <p class="hint">Noch keine Berechnung. Form ausfuellen und starten.</p>
                 </div>
             </div>
+        </section>
+
+        <section class="topic-note">
+            <h2>Worum geht es hier genau?</h2>
+            <p><strong>Bruttoersparnis</strong> bedeutet nur der Preisvorteil beim Tanken: (Preis zuhause minus Preis Samnaun) mal getankte Liter (Tank plus optional Reservekanister).</p>
+            <p><strong>Nettoersparnis</strong> bedeutet Bruttoersparnis minus Kosten fuer die Fahrt nach Samnaun (zusaetzlicher Verbrauch fuer die Strecke plus optional bewertete Zeitkosten).</p>
+            <p><strong>Wichtiger Vergleich:</strong> Dieses Tool vergleicht "ich muss sowieso tanken" gegen "ich tanke stattdessen in Samnaun". Wenn du den ganzen Monat gar nicht faehrst, ist Nicht-Fahren in der Regel finanziell guenstiger als eine extra Tankfahrt.</p>
+            <p><strong>Zeitkosten pro Stunde</strong> ist dein persoenlicher Wert fuer Reisezeit (z. B. entgangene Freizeit oder Arbeitszeit). Bei 0 EUR/h wird nur mit direkten Spritkosten gerechnet, bei hoeheren Werten wird Fahrtzeit als zusaetzlicher Kostenfaktor eingerechnet.</p>
+            <p>Die letzten Jahre waren von volatilen Energie- und Kraftstoffpreisen gepraegt (Nachwirkungen von Pandemiephase, Inflation und geopolitische Konflikte). Solche Unsicherheiten koennen Preisniveaus laenger belasten. Genau deshalb ist eine transparente, datenbasierte Entscheidungshilfe sinnvoll.</p>
+            <p>Fuer Developer ist das ein praxisnahes Beispiel: ein konkretes Kostenproblem mit einer konkreten, nachvollziehbaren Loesung. Solche fachlich verankerten Tools bleiben relevant, weil sie reale Entscheidungen unter Unsicherheit unterstuetzen.</p>
+            <ul>
+                <li>Formel-Kern: Netto = Brutto - Fahrkosten - Zeitkosten.</li>
+                <li>Reservekanister-Regeln: Oesterreich 10 L, Schweiz 25 L (optional zuschaltbar).</li>
+                <li>Interpretation: Nur positive Nettoersparnis bedeutet echter finanzieller Vorteil gegenueber lokalem Tanken.</li>
+            </ul>
         </section>
     </main>
 
@@ -363,6 +421,8 @@ def home() -> str:
                 <p class="metric"><strong>Round-trip Distanz:</strong> ${data.round_trip_distance_km.toFixed(1)} km</p>
                 <p class="metric"><strong>Trip-Fuel:</strong> ${data.trip_fuel_liters.toFixed(2)} L</p>
                 <p class="metric"><strong>Trip-Kosten (Fahrt):</strong> ${data.trip_fuel_cost.toFixed(2)} EUR</p>
+                <p class="metric"><strong>Reservekanister angerechnet:</strong> ${data.reserve_canister_liters_used.toFixed(2)} L</p>
+                <p class="metric"><strong>Gesamt-Tankvolumen fuer Vorteil:</strong> ${data.total_refuel_volume_liters.toFixed(2)} L</p>
                 <p class="metric"><strong>Bruttoersparnis Tanken:</strong> ${data.gross_savings.toFixed(2)} EUR</p>
                 <p class="metric"><strong>Break-even Distanz:</strong> ${data.break_even_round_trip_km.toFixed(1)} km</p>
                 <ul class="detail-list">
@@ -370,7 +430,7 @@ def home() -> str:
                     <li>Routenquelle: ${data.route_source}</li>
                     <li>Interpretation: Nettoersparnis = Bruttoersparnis minus Fahrkosten.</li>
                 </ul>
-                <p class="explain"><strong>Erklaerung:</strong> ${data.explanation}</p>
+                <p class="explain"><strong>Erklärung:</strong> ${data.explanation}</p>
             `;
         }
 
@@ -392,6 +452,8 @@ def home() -> str:
                 fuel_type: form.fuel_type.value,
                 consumption: Number(form.consumption.value),
                 tank_size: Number(form.tank_size.value),
+                include_reserve_canister: form.include_reserve_canister.value === "true",
+                reserve_canister_rule: form.reserve_canister_rule.value,
                 fuel_price_home: form.fuel_price_home.value ? Number(form.fuel_price_home.value) : null,
                 fuel_price_samnaun: form.fuel_price_samnaun.value ? Number(form.fuel_price_samnaun.value) : null,
                 time_cost_per_hour: Number(form.time_cost_per_hour.value || 0),
@@ -440,6 +502,8 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
         tank_size_liters=request.tank_size,
         fuel_price_home=prices.fuel_price_home,
         fuel_price_samnaun=prices.fuel_price_samnaun,
+        include_reserve_canister=request.include_reserve_canister,
+        reserve_canister_rule=request.reserve_canister_rule,
         time_cost_per_hour=request.time_cost_per_hour,
         travel_time_hours=route.travel_time_hours,
         average_speed_kmh=route.average_speed_kmh,
@@ -466,4 +530,6 @@ def calculate(request: CalculationRequest) -> CalculationResponse:
         trip_fuel_cost=result.trip_fuel_cost,
         gross_savings=result.gross_savings,
         break_even_round_trip_km=result.break_even_round_trip_km,
+        reserve_canister_liters_used=result.reserve_canister_liters_used,
+        total_refuel_volume_liters=result.total_refuel_volume_liters,
     )
