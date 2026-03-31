@@ -86,19 +86,28 @@ Why this matters:
 
 ```text
 fuel-samnaun-calculator/
+├── .dockerignore
+├── .github/
+│   └── workflows/
+│       └── docker-publish.yml
 ├── app/
+│   ├── __init__.py
 │   ├── main.py
 │   ├── calculator.py
 │   ├── models.py
 │   ├── static/
+│   │   └── favicon.ico
 │   └── services/
+│       ├── __init__.py
 │       ├── fuel_api.py
 │       └── distance_api.py
-├── tests/
-│   ├── test_calculator.py
-│   └── test_fuel_api.py
-├── README.md
+├── AIDD_DOKUMENTATION.md
+├── docker-compose.yml
+├── Dockerfile
 ├── PRD.md
+├── pytest.ini
+├── README.md
+├── requirements.txt
 ├── prompts/
 │   ├── 01-prompt.md
 │   ├── 02-prompt.md
@@ -122,8 +131,29 @@ fuel-samnaun-calculator/
 │   ├── 20-prompt.md
 │   ├── 21-prompt.md
 │   └── 22-prompt.md
-└── requirements.txt
+├── tests/
+│   ├── test_calculator.py
+│   └── test_fuel_api.py
+└── .venv/ (local only, not committed)
 ```
+
+## Project Layout Explained
+
+- `app/main.py`: FastAPI entrypoint, serves API endpoints and browser UI (`/`).
+- `app/calculator.py`: deterministic core calculation logic (trip fuel, costs, savings, break-even).
+- `app/models.py`: request/response schema validation via pydantic.
+- `app/services/distance_api.py`: route distance/travel time resolution with source fallback chain.
+- `app/services/fuel_api.py`: fuel price resolution, source tracking, scraping/API fallbacks.
+- `app/static/favicon.ico`: UI/browser icon asset used by root page and `/favicon.ico` endpoint.
+- `tests/test_calculator.py`: unit tests for pure calculator logic.
+- `tests/test_fuel_api.py`: service tests and regressions for source/fallback behavior.
+- `pytest.ini`: test discovery/import path config (`pythonpath = .`).
+- `Dockerfile`: multi-stage image build for production runtime.
+- `docker-compose.yml`: runtime stack for deployment, including Watchtower auto-update.
+- `.github/workflows/docker-publish.yml`: CI workflow to build and publish Docker images.
+- `PRD.md`: product requirements and scope.
+- `AIDD_DOKUMENTATION.md`: AI-driven development process documentation.
+- `prompts/`: complete prompt archive used during iterative development.
 
 ## Setup
 
@@ -134,13 +164,19 @@ fuel-samnaun-calculator/
 pip install -r requirements.txt
 ```
 
-3. Start the API:
+3. Run tests (recommended before local start):
+
+```bash
+pytest
+```
+
+4. Start the API:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-4. Open the browser GUI:
+5. Open the browser GUI:
 
 - Local app UI: `http://127.0.0.1:8000/`
 - Interactive API docs: `http://127.0.0.1:8000/docs`
