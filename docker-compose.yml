@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  samnaun-calculator:
+    image: paulsumm/samnaun-calculator:latest
+    container_name: samnaun-calculator
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 samnaun-calculator 
+    restart: unless-stopped
