@@ -2,6 +2,18 @@
 
 A structured Python prototype that evaluates whether driving to Samnaun for refueling is financially beneficial.
 
+## Why I built this
+
+Developing the **Fuel Samnaun Calculator** was born out of a mix of practical necessity and a passion for engineering. While many see a simple calculator, this project represents a comprehensive journey through the modern IT stack:
+
+* **Real-World Problem Solving:** I created a data-driven solution for a common local question: *"Is the trip to the duty-free zone actually worth it?"* It accounts for hidden costs like vehicle wear and tear and time, moving beyond simple price-per-liter comparisons.
+* **Infrastructure Mastery:** This isn't just code running on a laptop. It is hosted on a professional **Proxmox VE** hypervisor, involving the setup of dedicated Linux VMs and complex resource management.
+* **Network Deep-Dive:** Building this taught me the "hard way" about L2/L3 networking. I had to debug real-world issues like ARP/MAC address conflicts, bridge networking, and stateful firewall behavior within a virtualized environment.
+* **Full-Stack Learning & DevOps:** From writing the Python backend to containerizing the application with **Docker**, I've built a complete deployment pipeline. This included mastering CI/CD workflows and troubleshooting hardware architecture mismatches (ARM vs. AMD64).
+* **Continuous Growth:** This project is a testament to my **"Growth Mindset."** It showcases my ability to self-teach complex topics—from server hardening and disabling IPv6 to managing local DNS via Pi-hole—to ensure a stable and professional production environment.
+
+In short: It’s not just about gas prices; it’s about the engineering it takes to bring a reliable service to life.
+
 ## What the app does
 
 - Uses live route distance for a start location (Google Distance Matrix if API key is set, otherwise OSRM), with fallback map distances
