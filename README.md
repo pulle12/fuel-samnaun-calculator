@@ -145,6 +145,75 @@ uvicorn app.main:app --reload
 - Local app UI: `http://127.0.0.1:8000/`
 - Interactive API docs: `http://127.0.0.1:8000/docs`
 
+## Docker
+
+This project can be built and deployed as a container image.
+
+### Variante 1 (einfach): Fertiges Image von DockerHub nutzen
+
+```bash
+docker pull paulsumm/samnaun-calculator:latest
+docker run --rm -p 8080:8000 -d --name samnaun-calculator paulsumm/samnaun-calculator:latest
+```
+
+Then open:
+
+- App UI: `http://127.0.0.1:8080/`
+- API docs: `http://127.0.0.1:8080/docs`
+
+If the DockerHub repository is public, no extra access must be granted.
+Anyone can run `docker pull` without credentials.
+
+### Variante 2: Lokal selbst bauen
+
+```bash
+docker build -t samnaun-calculator .
+docker run --rm -p 8080:8000 -d --name samnaun-calculator samnaun-calculator
+```
+
+Then open:
+
+- App UI: `http://127.0.0.1:8080/`
+- API docs: `http://127.0.0.1:8080/docs`
+
+### CI/CD image publishing (GitHub Actions -> DockerHub)
+
+On each push to `main`, GitHub Actions builds and pushes Docker images to DockerHub.
+
+Current target platforms:
+
+- `linux/amd64`
+- `linux/arm/v7`
+
+Required GitHub repository secrets:
+
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+
+### Deploy on a home server (Proxmox VM)
+
+1. Create a Linux VM in Proxmox (Debian/Ubuntu recommended).
+2. Install Docker and Compose in that VM.
+3. Copy `docker-compose.yml` to the VM.
+4. In the VM directory, start services:
+
+```bash
+docker compose up -d
+```
+
+5. Access the app from your network using VM IP + port:
+
+- App UI: `http://<VM_IP>:8080/`
+- API docs: `http://<VM_IP>:8080/docs`
+
+Example: if VM IP is `192.168.178.50`, open `http://192.168.178.50:8080/`.
+
+If your image is private on DockerHub, run `docker login` on the VM first.
+
+### Automatic updates on server
+
+`docker-compose.yml` includes Watchtower. It periodically checks for new image versions and updates the running container automatically.
+
 ## API
 
 ### POST /calculate
