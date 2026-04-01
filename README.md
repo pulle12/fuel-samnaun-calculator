@@ -202,7 +202,9 @@ uvicorn app.main:app --reload
 
 This project can be built and deployed as a container image.
 
-### Variante 1 (einfach): Use Image from DockerHub
+### Quick Start (Run Locally)
+
+#### Option 1: Pull from DockerHub and Run
 
 ```bash
 docker pull paulsumm/samnaun-calculator:latest
@@ -214,10 +216,9 @@ Then open:
 - App UI: `http://127.0.0.1:8080/`
 - API docs: `http://127.0.0.1:8080/docs`
 
-If the DockerHub repository is public, no extra access must be granted.
-Anyone can run `docker pull` without credentials.
+The DockerHub repository is public, so no credentials are required.
 
-### Variante 2: Build own Image and Run Locally
+#### Option 2: Build Image Locally and Run
 
 ```bash
 docker build -t samnaun-calculator .
@@ -229,21 +230,23 @@ Then open:
 - App UI: `http://127.0.0.1:8080/`
 - API docs: `http://127.0.0.1:8080/docs`
 
-### CI/CD image publishing (GitHub Actions -> DockerHub)
+### CI/CD & Automated Image Publishing
 
-On each push to `main`, GitHub Actions builds and pushes Docker images to DockerHub.
+On each push to `main`, GitHub Actions automatically builds and pushes Docker images to DockerHub.
 
-Current target platforms:
+**Target platforms:**
 
 - `linux/amd64`
 - `linux/arm/v7`
 
-Required GitHub repository secrets:
+**Required GitHub repository secrets:**
 
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
 
-### Deploy on a home server (Proxmox VM)
+### Deployment Scenarios
+
+#### Scenario A: Home Server (Proxmox VM)
 
 1. Create a Linux VM in Proxmox (Debian/Ubuntu recommended).
 2. Install Docker and Compose in that VM.
@@ -263,9 +266,9 @@ Example: if VM IP is `192.168.178.50`, open `http://192.168.178.50:8080/`.
 
 If your image is private on DockerHub, run `docker login` on the VM first.
 
-### Deploy on a Raspberry Pi with `scp` and `docker-compose`
+#### Scenario B: Raspberry Pi with `docker-compose`
 
-This is the workflow that matches your current setup if the Pi already runs Docker and uses the `docker-compose` command.
+Use this workflow if your Raspberry Pi already runs Docker and `docker-compose`.
 
 1. Stop and remove the old manually started container if it still exists:
 
