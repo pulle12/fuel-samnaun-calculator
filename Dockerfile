@@ -12,6 +12,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+RUN useradd --create-home --shell /usr/sbin/nologin appuser
+
 COPY --from=builder /opt/venv /opt/venv
 
 COPY . .
@@ -19,6 +21,8 @@ COPY . .
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+
+USER appuser
 
 EXPOSE 8000
 

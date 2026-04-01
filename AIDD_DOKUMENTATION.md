@@ -34,6 +34,7 @@ Prompt-Archiv:
 - [prompts/20-prompt.md](prompts/20-prompt.md)
 - [prompts/21-prompt.md](prompts/21-prompt.md)
 - [prompts/22-prompt.md](prompts/22-prompt.md)
+- [prompts/23-prompt.md](prompts/23-prompt.md)
 
 Begleitdokumente:
 - [PRD.md](PRD.md)
@@ -112,7 +113,7 @@ Quellenkette:
 4. simulierte Fallback-Werte
 
 Wichtiger technischer Punkt:
-- Der Parser in [app/services/fuel_api.py](app/services/fuel_api.py) wurde von label-basiertem Matching auf block-basiertes Matching umgestellt (Diesel -> Super95 -> Super98 mit CHF-Werten), um False-Matches durch i18n/Template-Texte zu vermeiden.
+- Der Parser in [app/services/fuel_api.py](app/services/fuel_api.py) wurde von label-basiertem Matching auf block-basiertes Matching umgestellt und liest jetzt die EUR-Werte direkt unter den CHF-Zeilen aus (Diesel -> Super95 -> Super98), um False-Matches durch i18n/Template-Texte zu vermeiden.
 
 ## 6. UI und Favicon
 
@@ -141,11 +142,11 @@ Wichtiger technischer Punkt:
 - Fix: nächste gültige Live-Station in Zams verwenden statt direkt harter Fallback.
 - Absicherung: Test in [tests/test_fuel_api.py](tests/test_fuel_api.py).
 
-### 8.2 Hangl Parser Regression (Benzin 95)
-- Problem: Diesel und 98 wurden gefunden, 95 fiel teilweise auf Fallback.
-- Root Cause: Parser matchte u. a. Template-/Übersetzungslabels statt den realen Preisblock.
-- Fix: block-basiertes Regex-Matching auf echte Reihenfolge und CHF-Werte.
-- Absicherung: Tests mit Label-Rauschen in [tests/test_fuel_api.py](tests/test_fuel_api.py).
+### 8.2 Hangl Parser Regression (EUR statt CHF)
+- Problem: Die Samnaun-Seite lieferte für Diesel, Benzin 95 und Benzin 98 jeweils CHF und direkt darunter die korrekten EUR-Werte. Der Parser las bislang die CHF-Zeilen aus.
+- Root Cause: Das frühere Matching griff auf den ersten Preiswert pro Block zu, statt die direkt darunter stehenden EUR-Zeilen zu priorisieren.
+- Fix: Die Extraktion liest jetzt pro Fuel-Type den EUR-Wert aus dem jeweiligen Block; Interzegg wurde ebenfalls auf EUR-Nachkommavarianten angepasst.
+- Absicherung: Regressionstest in [tests/test_fuel_api.py](tests/test_fuel_api.py) prüft jetzt explizit EUR-Ausgabe für Hangl und Interzegg.
 
 ### 8.3 Favicon Sichtbarkeit in Browser-Tab
 - Problem: favicon Datei vorhanden, in der Tab-Leiste aber weiterhin nicht sichtbar.

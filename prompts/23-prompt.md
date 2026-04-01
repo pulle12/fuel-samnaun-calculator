@@ -1,0 +1,3 @@
+# Prompt 23
+
+ich habe einen gravierenden fehler entdeckt im programm. bitte diesen prompt wieder abspeichern, vermerken und diesen quality check in readme und aidd dokumentation md schreiben. das problem ist dass für die preise von samnaun zwar richtig abgelesen werden und richtig verarbeitet und richtige seite, allerdings sind die zahlen für diesel, benzin und super die Schweizer Franken, ich will aber die euro preise, die stehen auf der webseite direkt darunter. bitte bessere das aus. und auch das dockerfile neu machen dass ich das neue image publishen kann. wie mache ich auf meinem pi weiter wo noch der container mit dem alten image läuft?

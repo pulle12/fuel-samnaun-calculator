@@ -233,7 +233,7 @@ def test_resolve_fuel_prices_benzin98_derived_from_nearest_sup95(monkeypatch) ->
     assert prices.home_source.startswith("econtrol_derived_benzin98_from_sup95_nearest:")
 
 
-def test_extract_hangl_price_by_fuel_type_parses_chf_values() -> None:
+def test_extract_hangl_price_by_fuel_type_parses_eur_values() -> None:
     page_text = (
         '"fuel_prices":"Benzinpreise (Super 95)","diesel_prices":"Dieselpreise","super_prices":"Benzinpreise (Super 98)",' 
         "Dieselpreise 1.510 CHF 1.631 EUR 1.490 CHF 1.609 EUR "
@@ -241,9 +241,9 @@ def test_extract_hangl_price_by_fuel_type_parses_chf_values() -> None:
         "Benzinpreise (Super 98) 1.480 CHF 1.598 EUR 1.460 CHF 1.577 EUR Aktueller Vorzugskurs"
     )
 
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "diesel") == 1.510
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin95") == 1.360
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin98") == 1.480
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "diesel") == 1.631
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin95") == 1.469
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin98") == 1.598
 
 
 def test_extract_interzegg_price_by_fuel_type_uses_cheapest_entry() -> None:
@@ -252,6 +252,6 @@ def test_extract_interzegg_price_by_fuel_type_uses_cheapest_entry() -> None:
         "DIESEL CHF 1,53 / 1,663 EUR BENZIN 95 CHF 1,38 / 1,500 EUR"
     )
 
-    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "diesel") == 1.49
-    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin95") == 1.34
-    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin98") == 1.46
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "diesel") == 1.62
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin95") == 1.456
+    assert fuel_api._extract_interzegg_price_by_fuel_type(page_text, "benzin98") == 1.586
