@@ -21,6 +21,11 @@ In short: It’s not just about gas prices; it’s about the engineering it take
 - Calculates trip fuel, trip cost, gross savings, net savings, and break-even distance
 - Returns a clear recommendation and explanation via FastAPI
 
+Example interpretation note:
+- The savings examples in this project assume a full refuel of the available tank volume at the moment of the Samnaun visit.
+- If the tank is not empty, the actual savings scale with the liters you really buy.
+- In the calculation model, savings are therefore based on the fuel volume you plan to purchase, not on the current tank fill level alone.
+
 ## Tech Stack
 
 - Python 3.11+
@@ -197,7 +202,7 @@ uvicorn app.main:app --reload
 
 This project can be built and deployed as a container image.
 
-### Variante 1 (einfach): Fertiges Image von DockerHub nutzen
+### Variante 1 (einfach): Use Image from DockerHub
 
 ```bash
 docker pull paulsumm/samnaun-calculator:latest
@@ -212,7 +217,7 @@ Then open:
 If the DockerHub repository is public, no extra access must be granted.
 Anyone can run `docker pull` without credentials.
 
-### Variante 2: Lokal selbst bauen
+### Variante 2: Build own Image and Run Locally
 
 ```bash
 docker build -t samnaun-calculator .
@@ -257,6 +262,79 @@ docker compose up -d
 Example: if VM IP is `192.168.178.50`, open `http://192.168.178.50:8080/`.
 
 If your image is private on DockerHub, run `docker login` on the VM first.
+
+### Deploy on a Raspberry Pi with `scp` and `docker-compose`
+
+This is the workflow that matches your current setup if the Pi already runs Docker and uses the `docker-compose` command.
+
+1. Stop and remove the old manually started container if it still exists:
+
+```bash
+docker ps -a
+docker stop samnaun-calculator
+docker rm samnaun-calculator
+```
+
+2. Create a target folder on the Pi:
+
+```bash
+mkdir -p ~/samnaun-calculator
+cd ~/samnaun-calculator
+```
+
+3. Copy the Compose file from Windows to the Pi with `scp`:
+
+```bash
+scp docker-compose.yml pi@<PI_IP>:~/samnaun-calculator/docker-compose.yml
+```
+
+If you later add a local `.env` file, copy it the same way:
+
+```bash
+scp .env pi@<PI_IP>:~/samnaun-calculator/.env
+```
+
+Please note that the current `docker-compose.yml` does not require an `.env` file, but if you add one for environment variable configuration, it should be copied to the Pi as well.
+
+Important: It might be required to give the `scp` command the path to your public key (OpenSSH format) if you use key-based authentication and your key is not in the default location. For example:
+
+```bash
+scp -i C:\path\to\your\key\id_rsa docker-compose.yml pi@<PI_IP>:~/samnaun-calculator/docker-compose.yml
+```
+
+4. On the Pi, pull the current image and start the stack:
+
+```bash
+cd ~/samnaun-calculator
+docker-compose pull
+docker-compose up -d
+```
+
+5. Verify that the stack is running:
+
+```bash
+docker-compose ps
+docker ps
+docker-compose logs -f samnaun-calculator
+```
+
+6. When you publish a new image later, update the Pi with:
+
+```bash
+cd ~/samnaun-calculator
+docker-compose down
+docker-compose pull
+docker-compose up -d
+```
+
+This is only needed if you want to force the update immediately. If Watchtower is active in your Compose stack (it is for sure because it is included in the `docker-compose.yml`), it will update the container automatically after the new image is available in DockerHub if the scheduled check is happening. The manual `docker-compose pull` + `docker-compose up -d` flow is still the quickest way to force the upgrade immediately.
+
+7. If Watchtower is active in your Compose stack, it can also update the container automatically after the new image is available in DockerHub. The manual `docker-compose pull` + `docker-compose up -d` flow is still the quickest way to force the upgrade immediately.
+
+Important notes:
+- This repository currently uses `docker-compose.yml` without a required `.env` file.
+- If you do not use any environment variables, no extra file copy is needed.
+- If your Pi only supports `docker-compose` with a hyphen, use that command instead of `docker compose`.
 
 ### Automatic updates on server
 
