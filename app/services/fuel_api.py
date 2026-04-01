@@ -104,46 +104,55 @@ def _fetch_page_text(url: str, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS)
     return text.strip()
 
 
+def _fetch_page_html(url: str, timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS) -> Optional[str]:
+    headers = {"User-Agent": "samnaun-fuel-checker/0.4"}
+    try:
+        response = requests.get(url, timeout=timeout_seconds, headers=headers)
+        response.raise_for_status()
+    except requests.RequestException:
+        return None
+    return response.text
+
+
 def _parse_price_token(raw: str) -> Optional[float]:
     normalized = raw.strip().replace(" ", "").replace("'", "").replace(",", ".")
     return _safe_float(normalized)
 
 
-def _extract_first_eur_price(section_text: str) -> Optional[float]:
-    match = re.search(r"(\d{1,2}[\.,]\d{2,3})\s*EUR", section_text, flags=re.IGNORECASE)
+def _extract_hangl_exchange_rate(page_html: str) -> Optional[float]:
+    match = re.search(
+        r"JS-fuel-prices-container[^>]*data-rate=\"([0-9]{1,2}[\.,][0-9]{1,3})\"",
+        page_html,
+        flags=re.IGNORECASE,
+    )
     if not match:
         return None
     return _parse_price_token(match.group(1))
 
 
-def _extract_hangl_price_block(page_text: str) -> Optional[dict[FuelType, float]]:
-    parsed: dict[FuelType, float] = {}
-    pattern = (
-        r"Dieselpreise(?P<diesel_section>.*?)"
-        r"Benzinpreise\s*\(Super\s*95\)(?P<benzin95_section>.*?)"
-        r"Benzinpreise\s*\(Super\s*98\)(?P<benzin98_section>.*?)(?=Aktueller\s+Vorzugskurs|$)"
-    )
-    match = re.search(pattern, page_text, flags=re.IGNORECASE | re.DOTALL)
+def _extract_hangl_socar_chf_by_fuel_type(page_html: str, fuel_type: FuelType) -> Optional[float]:
+    pattern_by_fuel_type: dict[FuelType, str] = {
+        "diesel": r"<span>\s*Dieselpreise\s*</span>.*?<span\s+data-price=\"(\d{1,2}[\.,]\d{2,3})\">",
+        "benzin95": r"<span>\s*Benzinpreise\s*\(Super\s*95\)\s*</span>.*?<span\s+data-price=\"(\d{1,2}[\.,]\d{2,3})\">",
+        "benzin98": r"<span>\s*Benzinpreise\s*\(Super\s*98\)\s*</span>.*?<span\s+data-price=\"(\d{1,2}[\.,]\d{2,3})\">",
+    }
+    match = re.search(pattern_by_fuel_type[fuel_type], page_html, flags=re.IGNORECASE | re.DOTALL)
     if not match:
         return None
-
-    for key, section_name in (
-        ("diesel", "diesel_section"),
-        ("benzin95", "benzin95_section"),
-        ("benzin98", "benzin98_section"),
-    ):
-        value = _extract_first_eur_price(match.group(section_name))
-        if value is None:
-            return None
-        parsed[key] = value
-    return parsed
+    return _parse_price_token(match.group(1))
 
 
-def _extract_hangl_price_by_fuel_type(page_text: str, fuel_type: FuelType) -> Optional[float]:
-    block = _extract_hangl_price_block(page_text)
-    if block is None:
+def _extract_hangl_price_by_fuel_type(page_html: str, fuel_type: FuelType) -> Optional[float]:
+    exchange_rate = _extract_hangl_exchange_rate(page_html)
+    if exchange_rate is None:
         return None
-    return block.get(fuel_type)
+
+    # First price pair in each fuel block is SOCAR; second one is Mobility.
+    socar_chf = _extract_hangl_socar_chf_by_fuel_type(page_html, fuel_type)
+    if socar_chf is None:
+        return None
+
+    return round(socar_chf * exchange_rate, 3)
 
 
 def _extract_interzegg_price_by_fuel_type(page_text: str, fuel_type: FuelType) -> Optional[float]:
@@ -167,9 +176,9 @@ def _extract_interzegg_price_by_fuel_type(page_text: str, fuel_type: FuelType) -
 
 
 def _fetch_live_samnaun_price(fuel_type: FuelType) -> Optional[tuple[float, str]]:
-    hangl_page_text = _fetch_page_text(HANGL_MOBILITY_URL)
-    if hangl_page_text:
-        hangl_price = _extract_hangl_price_by_fuel_type(hangl_page_text, fuel_type)
+    hangl_page_html = _fetch_page_html(HANGL_MOBILITY_URL)
+    if hangl_page_html:
+        hangl_price = _extract_hangl_price_by_fuel_type(hangl_page_html, fuel_type)
         if hangl_price is not None:
             return hangl_price, "samnaun_socar_live_hangl_html"
 

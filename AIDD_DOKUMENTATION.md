@@ -35,6 +35,7 @@ Prompt-Archiv:
 - [prompts/21-prompt.md](prompts/21-prompt.md)
 - [prompts/22-prompt.md](prompts/22-prompt.md)
 - [prompts/23-prompt.md](prompts/23-prompt.md)
+- [prompts/24-prompt.md](prompts/24-prompt.md)
 
 Begleitdokumente:
 - [PRD.md](PRD.md)
@@ -145,8 +146,8 @@ Wichtiger technischer Punkt:
 ### 8.2 Hangl Parser Regression (EUR statt CHF)
 - Problem: Die Samnaun-Seite lieferte für Diesel, Benzin 95 und Benzin 98 jeweils CHF und direkt darunter die korrekten EUR-Werte. Der Parser las bislang die CHF-Zeilen aus.
 - Root Cause: Das frühere Matching griff auf den ersten Preiswert pro Block zu, statt die direkt darunter stehenden EUR-Zeilen zu priorisieren.
-- Fix: Die Extraktion liest jetzt pro Fuel-Type den EUR-Wert aus dem jeweiligen Block; Interzegg wurde ebenfalls auf EUR-Nachkommavarianten angepasst.
-- Absicherung: Regressionstest in [tests/test_fuel_api.py](tests/test_fuel_api.py) prüft jetzt explizit EUR-Ausgabe für Hangl und Interzegg.
+- Fix: Die Extraktion für Hangl liest jetzt den SOCAR-CHF-Basiswert aus `data-price` (erstes Paar je Block) und rechnet EUR über die im Markup enthaltene `data-rate`; das entspricht der clientseitigen Darstellung der Seite. Interzegg bleibt auf EUR-Nachkommavarianten abgesichert.
+- Absicherung: Regressionstest in [tests/test_fuel_api.py](tests/test_fuel_api.py) prüft jetzt explizit die Hangl-Berechnung via `data-rate` sowie die Interzegg-EUR-Ausgabe.
 
 ### 8.3 Favicon Sichtbarkeit in Browser-Tab
 - Problem: favicon Datei vorhanden, in der Tab-Leiste aber weiterhin nicht sichtbar.

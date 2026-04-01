@@ -9,8 +9,6 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-    env_file:
-      - .env
     logging:
       driver: "json-file"
       options:

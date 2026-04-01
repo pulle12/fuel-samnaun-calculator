@@ -234,16 +234,29 @@ def test_resolve_fuel_prices_benzin98_derived_from_nearest_sup95(monkeypatch) ->
 
 
 def test_extract_hangl_price_by_fuel_type_parses_eur_values() -> None:
-    page_text = (
-        '"fuel_prices":"Benzinpreise (Super 95)","diesel_prices":"Dieselpreise","super_prices":"Benzinpreise (Super 98)",' 
-        "Dieselpreise 1.510 CHF 1.631 EUR 1.490 CHF 1.609 EUR "
-        "Benzinpreise (Super 95) 1.360 CHF 1.469 EUR 1.340 CHF 1.447 EUR "
-        "Benzinpreise (Super 98) 1.480 CHF 1.598 EUR 1.460 CHF 1.577 EUR Aktueller Vorzugskurs"
+    page_html = (
+        '<div class="JS-fuel-prices-container" data-rate="1.08">'
+        '<div class="DNA-section__fuel-prices__item">'
+        '<div class="DNA-section__fuel-prices__title"><span>Dieselpreise</span></div>'
+        '<div><div><span data-price="1.560">1.560 CHF</span><span class="JS-euro">1.560 EUR</span></div>'
+        '<div><span data-price="1.540">1.540 CHF</span><span class="JS-euro">1.540 EUR</span></div></div>'
+        '</div>'
+        '<div class="DNA-section__fuel-prices__item">'
+        '<div class="DNA-section__fuel-prices__title"><span>Benzinpreise (Super 95)</span></div>'
+        '<div><div><span data-price="1.360">1.360 CHF</span><span class="JS-euro">1.360 EUR</span></div>'
+        '<div><span data-price="1.340">1.340 CHF</span><span class="JS-euro">1.340 EUR</span></div></div>'
+        '</div>'
+        '<div class="DNA-section__fuel-prices__item">'
+        '<div class="DNA-section__fuel-prices__title"><span>Benzinpreise (Super 98)</span></div>'
+        '<div><div><span data-price="1.480">1.480 CHF</span><span class="JS-euro">1.480 EUR</span></div>'
+        '<div><span data-price="1.460">1.460 CHF</span><span class="JS-euro">1.460 EUR</span></div></div>'
+        '</div>'
+        '</div>'
     )
 
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "diesel") == 1.631
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin95") == 1.469
-    assert fuel_api._extract_hangl_price_by_fuel_type(page_text, "benzin98") == 1.598
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_html, "diesel") == 1.685
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_html, "benzin95") == 1.469
+    assert fuel_api._extract_hangl_price_by_fuel_type(page_html, "benzin98") == 1.598
 
 
 def test_extract_interzegg_price_by_fuel_type_uses_cheapest_entry() -> None:
